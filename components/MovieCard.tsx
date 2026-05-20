@@ -91,9 +91,15 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
             </div>
 
             {/* Tap to Flip Guide Indicator */}
-            <div className="absolute bottom-4 right-4 animate-float flex items-center gap-1 text-[10px] font-bold text-white bg-black/60 border border-white/15 px-2.5 py-1 rounded-full backdrop-blur-md">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onFlip(true);
+              }}
+              className="no-flip absolute bottom-4 right-4 animate-float flex items-center gap-1 text-[10px] font-bold text-white bg-black/60 border border-white/15 px-2.5 py-1 rounded-full backdrop-blur-md cursor-pointer hover:bg-black/80 transition-all active:scale-95 z-20"
+            >
               <Play className="w-3 h-3 fill-white" /> Tap to Watch Trailer
-            </div>
+            </button>
           </div>
 
           {/* Details Footer */}

@@ -158,7 +158,7 @@ export default function SwipeDeck({
           onDragEnd={handleDragEnd}
           animate={controls}
           style={{ x, y, rotate, opacity, zIndex: 10 }}
-          className="absolute inset-0 w-full h-full touch-none"
+          className={`absolute inset-0 w-full h-full ${isFlipped ? 'touch-auto' : 'touch-none'}`}
         >
           {/* Stamps overlays */}
           {!isFlipped && (
