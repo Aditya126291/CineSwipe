@@ -102,7 +102,15 @@ export default function MovieNightPlanner({
                 {/* Thumbnail Poster */}
                 <div className="w-12 aspect-[2/3] rounded-lg overflow-hidden shrink-0 bg-zinc-800 relative">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={item.posterUrl} alt={item.title} className="w-full h-full object-cover" />
+                  <img
+                    src={item.posterUrl || '/poster-placeholder.svg'}
+                    alt={item.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/poster-placeholder.svg';
+                    }}
+                  />
                 </div>
 
                 {/* Movie Title & Providers Info */}

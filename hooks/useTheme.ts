@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { safeStorage } from '@/lib/storage';
 
 export type Theme = 'dark' | 'light';
 
@@ -9,7 +10,7 @@ export function useTheme() {
 
   useEffect(() => {
     // Check local storage or system preference
-    const savedTheme = localStorage.getItem('cineswipe-theme') as Theme | null;
+    const savedTheme = safeStorage.getItem('cineswipe-theme') as Theme | null;
     const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     const initialTheme = savedTheme || systemTheme;
     
@@ -20,7 +21,7 @@ export function useTheme() {
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
-    localStorage.setItem('cineswipe-theme', nextTheme);
+    safeStorage.setItem('cineswipe-theme', nextTheme);
     document.documentElement.classList.toggle('dark', nextTheme === 'dark');
   };
 

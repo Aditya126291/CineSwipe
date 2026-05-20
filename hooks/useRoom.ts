@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { safeStorage } from '@/lib/storage';
 import { supabase, hasSupabase } from '@/lib/supabase/client';
 import type { Room, RoomMember, Swipe } from '@/lib/supabase/types';
 import type { ContentItem } from '@/lib/tmdb/types';
@@ -42,10 +43,10 @@ export function useRoom(
 
   // Generate or retrieve a unique user UUID
   useEffect(() => {
-    let savedId = localStorage.getItem('cineswipe-user-id') || '';
+    let savedId = safeStorage.getItem('cineswipe-user-id') || '';
     if (!savedId || !isValidUUID(savedId)) {
       savedId = generateUUID();
-      localStorage.setItem('cineswipe-user-id', savedId);
+      safeStorage.setItem('cineswipe-user-id', savedId);
     }
     setUserId(savedId);
   }, []);

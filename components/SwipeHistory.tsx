@@ -125,10 +125,14 @@ export default function SwipeHistory({
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={item.posterUrl}
+                        src={item.posterUrl || '/poster-placeholder.svg'}
                         alt={item.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/poster-placeholder.svg';
+                        }}
                       />
                       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-2 text-white flex flex-col justify-end">
                         <span className="text-[10px] font-extrabold truncate">{item.title}</span>

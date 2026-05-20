@@ -118,10 +118,14 @@ export default function MatchModal({
               <div className="w-44 aspect-[2/3] rounded-2xl overflow-hidden border-2 border-violet-500/30 shadow-2xl relative mb-6 glow-violet animate-float">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={movie.posterUrl}
+                  src={movie.posterUrl || '/poster-placeholder.svg'}
                   alt={movie.title}
                   className="w-full h-full object-cover"
                   draggable={false}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/poster-placeholder.svg';
+                  }}
                 />
               </div>
 

@@ -26,6 +26,11 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
   }, [isFlipped]);
 
   const handleCardClick = (e: React.MouseEvent) => {
+    // Avoid flipping when already flipped (they must click explicit Close button or swipe)
+    if (isFlipped) {
+      return;
+    }
+
     // Avoid flipping when clicking inside interactive items
     const target = e.target as HTMLElement;
     if (
@@ -70,10 +75,14 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
           <div className="w-full flex-1 bg-zinc-900 relative overflow-hidden group">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={movie.posterUrl}
+              src={movie.posterUrl || '/poster-placeholder.svg'}
               alt={movie.title}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               draggable={false}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/poster-placeholder.svg';
+              }}
             />
             {/* Dark gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-transparent to-black/30" />
@@ -162,10 +171,14 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
               <div className="w-full h-full relative flex items-center justify-center bg-zinc-950">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={movie.backdropUrl || movie.posterUrl}
+                  src={movie.backdropUrl || movie.posterUrl || '/poster-placeholder.svg'}
                   alt={movie.title}
                   className="absolute inset-0 w-full h-full object-cover opacity-40 blur-[2px]"
                   draggable={false}
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/poster-placeholder.svg';
+                  }}
                 />
                 <div className="absolute inset-0 bg-black/40" />
 

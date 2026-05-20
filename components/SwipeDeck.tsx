@@ -79,22 +79,18 @@ export default function SwipeDeck({
   };
 
   const triggerButtonSwipe = async (direction: 'like' | 'dislike' | 'superlike') => {
-    if (isFlipped) return;
-
     if (direction === 'like') {
-      await controls.start({ x: 500, opacity: 0, transition: { duration: 0.2 } });
-      onSwipe('like');
+      await controls.start({ x: 500, opacity: 0, transition: { duration: 0.3 } });
     } else if (direction === 'dislike') {
-      await controls.start({ x: -500, opacity: 0, transition: { duration: 0.2 } });
-      onSwipe('dislike');
+      await controls.start({ x: -500, opacity: 0, transition: { duration: 0.3 } });
     } else if (direction === 'superlike') {
       if (!isPremium) {
         onUpgradePrompt();
         return;
       }
-      await controls.start({ y: -500, opacity: 0, transition: { duration: 0.2 } });
-      onSwipe('superlike');
+      await controls.start({ y: -500, opacity: 0, transition: { duration: 0.3 } });
     }
+    onSwipe(direction);
     resetCard();
   };
 

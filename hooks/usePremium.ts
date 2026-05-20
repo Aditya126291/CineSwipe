@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { safeStorage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase/client';
 
 export interface PremiumState {
@@ -39,29 +40,29 @@ export function usePremium(userId?: string) {
     // 1. Resolve or generate valid UUID
     let activeId = userId;
     if (!activeId) {
-      activeId = localStorage.getItem('cineswipe-user-id') || '';
+      activeId = safeStorage.getItem('cineswipe-user-id') || '';
     }
     
     if (!activeId || !isValidUUID(activeId)) {
       activeId = generateUUID();
-      localStorage.setItem('cineswipe-user-id', activeId);
+      safeStorage.setItem('cineswipe-user-id', activeId);
     }
     
     setResolvedUserId(activeId);
 
     // 2. Check LocalStorage premium and swipe metrics
-    const localPremium = localStorage.getItem('cineswipe-plus') === 'true';
+    const localPremium = safeStorage.getItem('cineswipe-plus') === 'true';
     setIsPremium(localPremium);
 
     const todayStr = new Date().toDateString();
-    const storedDate = localStorage.getItem('cineswipe-swipe-date');
-    const storedCount = localStorage.getItem('cineswipe-swipe-count');
+    const storedDate = safeStorage.getItem('cineswipe-swipe-date');
+    const storedCount = safeStorage.getItem('cineswipe-swipe-count');
 
     if (storedDate === todayStr && storedCount) {
       setSwipeCount(parseInt(storedCount, 10));
     } else {
-      localStorage.setItem('cineswipe-swipe-date', todayStr);
-      localStorage.setItem('cineswipe-swipe-count', '0');
+      safeStorage.setItem('cineswipe-swipe-date', todayStr);
+      safeStorage.setItem('cineswipe-swipe-count', '0');
       setSwipeCount(0);
     }
 
@@ -75,7 +76,7 @@ export function usePremium(userId?: string) {
             .eq('id', activeId)
             .single();
 
-          const username = localStorage.getItem('cineswipe-username') || 'Anonymous Surfer';
+          const username = safeStorage.getItem('cineswipe-username') || 'Anonymous Surfer';
           const todayIso = new Date().toISOString().split('T')[0];
 
           if (error || !data) {
@@ -94,17 +95,17 @@ export function usePremium(userId?: string) {
             
             if (insertedData) {
               setIsPremium(insertedData.is_premium);
-              localStorage.setItem('cineswipe-plus', insertedData.is_premium ? 'true' : 'false');
+              safeStorage.setItem('cineswipe-plus', insertedData.is_premium ? 'true' : 'false');
             }
           } else {
             // User exists, sync states
             setIsPremium(data.is_premium);
-            localStorage.setItem('cineswipe-plus', data.is_premium ? 'true' : 'false');
+            safeStorage.setItem('cineswipe-plus', data.is_premium ? 'true' : 'false');
             
             const dbDate = new Date(data.last_swipe_date).toDateString();
             if (dbDate === todayStr) {
               setSwipeCount(data.daily_swipe_count);
-              localStorage.setItem('cineswipe-swipe-count', data.daily_swipe_count.toString());
+              safeStorage.setItem('cineswipe-swipe-count', data.daily_swipe_count.toString());
             }
           }
         } catch (err) {
@@ -125,7 +126,7 @@ export function usePremium(userId?: string) {
     }
 
     setSwipeCount(newCount);
-    localStorage.setItem('cineswipe-swipe-count', newCount.toString());
+    safeStorage.setItem('cineswipe-swipe-count', newCount.toString());
 
     const activeId = resolvedUserId || userId;
     if (supabase && activeId) {
@@ -141,7 +142,7 @@ export function usePremium(userId?: string) {
 
   const upgradeToPremium = async () => {
     setIsPremium(true);
-    localStorage.setItem('cineswipe-plus', 'true');
+    safeStorage.setItem('cineswipe-plus', 'true');
 
     const activeId = resolvedUserId || userId;
     if (supabase && activeId) {

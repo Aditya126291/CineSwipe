@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
+import { safeStorage } from '@/lib/storage';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Sparkles, Film, History, Users, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
@@ -63,7 +64,7 @@ export default function RoomPage({ params }: PageProps) {
 
   // Assign random username & color initially
   useEffect(() => {
-    const savedName = localStorage.getItem('cineswipe-username');
+    const savedName = safeStorage.getItem('cineswipe-username');
     if (savedName) {
       setUsername(savedName);
       setNameSaved(true);
@@ -80,7 +81,7 @@ export default function RoomPage({ params }: PageProps) {
 
   const handleSaveName = () => {
     if (!username.trim()) return;
-    localStorage.setItem('cineswipe-username', username.trim());
+    safeStorage.setItem('cineswipe-username', username.trim());
     setNameSaved(true);
   };
 
