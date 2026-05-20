@@ -67,7 +67,7 @@ export function useRoom(
           max_members: isPremiumUser ? 10 : 3,
         });
 
-        // Initialize local members list
+        // Initialize local members list with just the current user
         const initialMembers: RoomMember[] = [
           {
             room_id: 'mock-room-id',
@@ -75,23 +75,6 @@ export function useRoom(
             username: username || 'You (Surfer)',
             avatar_color: avatarColor,
             is_premium: isPremiumUser,
-            joined_at: new Date().toISOString(),
-          },
-          // Simulate two funny active mock surfers for cooperative swipe simulation!
-          {
-            room_id: 'mock-room-id',
-            user_id: 'mock-user-amy',
-            username: 'Amy (Cinephile)',
-            avatar_color: '#ec4899',
-            is_premium: false,
-            joined_at: new Date().toISOString(),
-          },
-          {
-            room_id: 'mock-room-id',
-            user_id: 'mock-user-raj',
-            username: 'Raj (Popcorn Lover)',
-            avatar_color: '#eab308',
-            is_premium: true,
             joined_at: new Date().toISOString(),
           },
         ];
@@ -256,26 +239,6 @@ export function useRoom(
     if (isLocalMock) {
       // Record user's swipe
       recordRoomSwipe(userId, content.id, direction);
-
-      // Simulate match logic in Mock Mode
-      if (direction === 'like' || direction === 'superlike') {
-        // Amy and Raj like movies with a high random chance to simulate natural matches!
-        const willAmyLike = content.rating > 7.0 || Math.random() > 0.4;
-        const willRajLike = content.rating > 7.5 || Math.random() > 0.3;
-
-        setTimeout(() => {
-          if (willAmyLike) {
-            recordRoomSwipe('mock-user-amy', content.id, 'like');
-          }
-          setTimeout(() => {
-            if (willRajLike) {
-              recordRoomSwipe('mock-user-raj', content.id, 'like');
-              // Trigger match celebration locally
-              onMatch(content, 'Everyone swiped Liked!');
-            }
-          }, 1200);
-        }, 800);
-      }
       return;
     }
 

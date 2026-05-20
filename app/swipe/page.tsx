@@ -41,17 +41,6 @@ export default function SoloSwipePage() {
       handleLimitExceeded();
       return;
     }
-
-    // Trigger random Match check simulation in Solo Mode for user delight!
-    if ((direction === 'like' || direction === 'superlike') && Math.random() > 0.6) {
-      const swipedMovie = movies.find((m) => m.id === movieId);
-      if (swipedMovie) {
-        setTimeout(() => {
-          setMatchedMovie(swipedMovie);
-          setMatchOpen(true);
-        }, 600);
-      }
-    }
   };
 
   const {

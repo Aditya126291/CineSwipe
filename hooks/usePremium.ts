@@ -158,6 +158,17 @@ export function usePremium(userId?: string) {
     const amount = 9900; // Rs. 99 (9900 paise)
     const currency = 'INR';
     
+    // Fast local simulation for dev/sandbox mode if Razorpay key is missing or mock
+    const key_id = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+    if (!key_id || key_id === 'rzp_test_mockkey123') {
+      console.log('Razorpay public key not set. Running clean visual checkout bypass...');
+      setTimeout(() => {
+        upgradeToPremium();
+        onSuccess();
+      }, 1200);
+      return;
+    }
+    
     // Check if Razorpay script is loaded. If not, inject it
     const loadRazorpayScript = () => {
       return new Promise((resolve) => {
@@ -180,6 +191,7 @@ export function usePremium(userId?: string) {
         }, 1500);
         return;
       }
+
 
       // Call API route to create order
       try {

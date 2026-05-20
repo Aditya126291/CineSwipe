@@ -18,6 +18,48 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  const [posterSrc, setPosterSrc] = useState<string>('');
+  const [backdropSrc, setBackdropSrc] = useState<string>('');
+  const posterRetryRef = useRef<number>(0);
+  const backdropRetryRef = useRef<number>(0);
+
+  // Synchronize poster and backdrop states when the movie changes, resetting retry counters
+  useEffect(() => {
+    setPosterSrc(movie.posterUrl || '/poster-placeholder.svg');
+    setBackdropSrc(movie.backdropUrl || movie.posterUrl || '/poster-placeholder.svg');
+    posterRetryRef.current = 0;
+    backdropRetryRef.current = 0;
+  }, [movie]);
+
+  const handlePosterError = () => {
+    if (movie.posterUrl && posterRetryRef.current < 3) {
+      posterRetryRef.current += 1;
+      const separator = movie.posterUrl.includes('?') ? '&' : '?';
+      const retryUrl = `${movie.posterUrl}${separator}retry=${posterRetryRef.current}`;
+      console.log(`Poster failed to load for "${movie.title}". Retrying (${posterRetryRef.current}/3): ${retryUrl}`);
+      setTimeout(() => {
+        setPosterSrc(retryUrl);
+      }, 600);
+    } else {
+      setPosterSrc('/poster-placeholder.svg');
+    }
+  };
+
+  const handleBackdropError = () => {
+    const originalUrl = movie.backdropUrl || movie.posterUrl;
+    if (originalUrl && backdropRetryRef.current < 3) {
+      backdropRetryRef.current += 1;
+      const separator = originalUrl.includes('?') ? '&' : '?';
+      const retryUrl = `${originalUrl}${separator}retry=${backdropRetryRef.current}`;
+      console.log(`Backdrop failed to load for "${movie.title}". Retrying (${backdropRetryRef.current}/3): ${retryUrl}`);
+      setTimeout(() => {
+        setBackdropSrc(retryUrl);
+      }, 600);
+    } else {
+      setBackdropSrc('/poster-placeholder.svg');
+    }
+  };
+
   // Stop video when card flips back or unmounts
   useEffect(() => {
     if (!isFlipped) {
@@ -26,11 +68,6 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
   }, [isFlipped]);
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // Avoid flipping when already flipped (they must click explicit Close button or swipe)
-    if (isFlipped) {
-      return;
-    }
-
     // Avoid flipping when clicking inside interactive items
     const target = e.target as HTMLElement;
     if (
@@ -75,14 +112,12 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
           <div className="w-full flex-1 bg-zinc-900 relative overflow-hidden group">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={movie.posterUrl || '/poster-placeholder.svg'}
+              key={movie.id}
+              src={posterSrc}
               alt={movie.title}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               draggable={false}
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = '/poster-placeholder.svg';
-              }}
+              onError={handlePosterError}
             />
             {/* Dark gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-transparent to-black/30" />
@@ -171,14 +206,12 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
               <div className="w-full h-full relative flex items-center justify-center bg-zinc-950">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={movie.backdropUrl || movie.posterUrl || '/poster-placeholder.svg'}
+                  key={movie.id}
+                  src={backdropSrc}
                   alt={movie.title}
                   className="absolute inset-0 w-full h-full object-cover opacity-40 blur-[2px]"
                   draggable={false}
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.src = '/poster-placeholder.svg';
-                  }}
+                  onError={handleBackdropError}
                 />
                 <div className="absolute inset-0 bg-black/40" />
 
@@ -242,17 +275,6 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
                   </span>
                 </div>
               )}
-
-              {/* Close Button to flip back */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onFlip(false);
-                }}
-                className="w-full py-2.5 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 active:scale-98 text-xs font-bold transition-all text-center flex items-center justify-center gap-2"
-              >
-                <Eye className="w-4 h-4" /> Resume Swiping
-              </button>
             </div>
           </div>
         </div>
