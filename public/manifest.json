@@ -1,0 +1,17 @@
+{
+  "name": "CineSwipe - Swipe & Match Movies with Friends",
+  "short_name": "CineSwipe",
+  "description": "Cooperative real-time movie and web series swiping & matching app for solo viewers or popcorn party rooms.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#7c3aed",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}
