@@ -10,12 +10,14 @@ interface MovieNightPlannerProps {
   matchedMovies: ContentItem[];
   isPremium: boolean;
   onUpgradePrompt: () => void;
+  activeSwipes?: Record<number, Record<string, { direction: string; timestamp: number }>>;
 }
 
 export default function MovieNightPlanner({
   matchedMovies,
   isPremium,
   onUpgradePrompt,
+  activeSwipes = {},
 }: MovieNightPlannerProps) {
   const [contentType, setContentType] = useState<'all' | 'movie' | 'tv'>('all');
 
@@ -25,10 +27,30 @@ export default function MovieNightPlanner({
     return m.mediaType === contentType;
   });
 
+  // Rank matches by speed score (faster = lower score)
+  const rankedMatches = [...filteredMatches].sort((a, b) => {
+    const getScore = (movie: ContentItem) => {
+      const swipes = activeSwipes[movie.id] || {};
+      const swipeValues = Object.values(swipes);
+      if (swipeValues.length === 0) return Number.MAX_SAFE_INTEGER;
+      
+      const timestamps = swipeValues.map(s => s.timestamp).filter(Boolean);
+      if (timestamps.length < 2) return Number.MAX_SAFE_INTEGER; // Not enough data
+      
+      const maxTime = Math.max(...timestamps);
+      const minTime = Math.min(...timestamps);
+      const rawSpeed = maxTime - minTime;
+      
+      const superlikes = swipeValues.filter(s => s.direction === 'superlike').length;
+      return rawSpeed - (superlikes * 2500); // 2.5s bonus per superlike
+    };
+    return getScore(a) - getScore(b);
+  });
+
   // Free tier displays only the top 3 matched movies. Premium ranks them all.
   const freeTierLimit = 3;
-  const displayList = isPremium ? filteredMatches : filteredMatches.slice(0, freeTierLimit);
-  const hiddenCount = filteredMatches.length - displayList.length;
+  const displayList = isPremium ? rankedMatches : rankedMatches.slice(0, freeTierLimit);
+  const hiddenCount = rankedMatches.length - displayList.length;
 
   return (
     <div className="w-full max-w-md p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-navy-900 shadow-2xl flex flex-col gap-6 select-none animate-scale-in">

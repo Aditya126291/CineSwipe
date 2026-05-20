@@ -66,13 +66,16 @@ export async function POST(
     // Get current clean members list
     const members = mockStore.getCleanMembers(code);
 
-    // Rebuild activeSwipes map in structure: Record<contentId, Record<userId, direction>>
-    const activeSwipes: Record<number, Record<string, 'like' | 'dislike' | 'superlike'>> = {};
+    // Rebuild activeSwipes map in structure: Record<contentId, Record<userId, {direction, timestamp}>>
+    const activeSwipes: Record<number, Record<string, {direction: 'like' | 'dislike' | 'superlike', timestamp: number}>> = {};
     roomData.swipes.forEach((s) => {
       if (!activeSwipes[s.content_id]) {
         activeSwipes[s.content_id] = {};
       }
-      activeSwipes[s.content_id][s.user_id] = s.direction as any;
+      activeSwipes[s.content_id][s.user_id] = { 
+        direction: s.direction as any, 
+        timestamp: new Date(s.swiped_at).getTime() 
+      };
     });
 
     return NextResponse.json({

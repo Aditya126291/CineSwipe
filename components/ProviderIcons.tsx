@@ -52,6 +52,32 @@ export default function ProviderIcons({ providers }: ProviderIconsProps) {
     }
   };
 
+  const getAffiliateLink = (name: string, originalLink?: string) => {
+    if (!originalLink || originalLink === '#') return '#';
+    try {
+      const url = new URL(originalLink);
+      
+      // Amazon Prime Video Associate Tag injection
+      if (url.hostname.includes('amazon.')) {
+        const affiliateTag = process.env.NEXT_PUBLIC_AMAZON_AFFILIATE_TAG || 'cineswipe-21';
+        url.searchParams.set('tag', affiliateTag);
+        return url.toString();
+      }
+      
+      // Apple TV Campaign / Affiliate Token injection
+      if (url.hostname.includes('apple.com')) {
+        const affiliateId = process.env.NEXT_PUBLIC_APPLE_AFFILIATE_ID || '1011l35Fp';
+        url.searchParams.set('at', affiliateId);
+        url.searchParams.set('ct', 'cineswipe');
+        return url.toString();
+      }
+      
+      return originalLink;
+    } catch {
+      return originalLink;
+    }
+  };
+
   const activeProviders = providers && providers.length > 0 ? providers : [
     { name: 'Netflix' },
     { name: 'Prime Video' },
@@ -65,7 +91,7 @@ export default function ProviderIcons({ providers }: ProviderIconsProps) {
         {activeProviders.map((p, idx) => (
           <a
             key={idx}
-            href={p.link || '#'}
+            href={getAffiliateLink(p.name, p.link)}
             target={p.link ? '_blank' : '_self'}
             rel="noopener noreferrer"
             className="hover:scale-110 active:scale-95 transition-all duration-200"

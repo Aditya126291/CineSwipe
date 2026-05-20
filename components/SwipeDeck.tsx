@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { motion, useMotionValue, useTransform, useAnimation } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, useMotionValue, useTransform, useAnimation, AnimatePresence } from 'framer-motion';
 import { Heart, X, Zap, Sparkles } from 'lucide-react';
 import type { ContentItem } from '@/lib/tmdb/types';
 import MovieCard from './MovieCard';
@@ -14,6 +14,8 @@ interface SwipeDeckProps {
   onUpgradePrompt: () => void;
   undo: () => void;
   historyLength: number;
+  activeSwipes?: Record<number, Record<string, { direction: string; timestamp: number }>>;
+  totalMembers?: number;
 }
 
 export default function SwipeDeck({
@@ -24,11 +26,32 @@ export default function SwipeDeck({
   onUpgradePrompt,
   undo,
   historyLength,
+  activeSwipes = {},
+  totalMembers = 1,
 }: SwipeDeckProps) {
   const [flippedCardId, setFlippedCardId] = useState<number | null>(null);
   const activeCard = movies[currentIndex] || null;
   const nextCard = movies[currentIndex + 1] || null;
   const thirdCard = movies[currentIndex + 2] || null;
+
+  const [superlikeToast, setSuperlikeToast] = useState<{ username: string; contentId: number } | null>(null);
+  const currentLikes = activeCard
+    ? Object.values(activeSwipes[activeCard.id] || {}).filter(
+        (s) => s.direction === 'like' || s.direction === 'superlike'
+      ).length
+    : 0;
+
+  useEffect(() => {
+    const handleSuperlike = (e: any) => {
+      const { username, contentId } = e.detail;
+      setSuperlikeToast({ username, contentId });
+      setTimeout(() => {
+        setSuperlikeToast((prev) => (prev?.contentId === contentId ? null : prev));
+      }, 3500);
+    };
+    window.addEventListener('cineswipe-superlike', handleSuperlike);
+    return () => window.removeEventListener('cineswipe-superlike', handleSuperlike);
+  }, []);
 
   // Drag physics setup for Framer Motion
   const x = useMotionValue(0);
@@ -176,6 +199,33 @@ export default function SwipeDeck({
             onUpgradePrompt={onUpgradePrompt}
           />
         </motion.div>
+        
+        {/* Live Like Counter Badge */}
+        {currentLikes > 0 && !isFlipped && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="absolute -top-4 right-0 z-50 bg-violet-600 text-white px-3 py-1.5 rounded-xl font-bold text-xs shadow-lg border border-violet-400 flex items-center gap-1.5"
+          >
+            🔥 {currentLikes} / {totalMembers} liked this
+          </motion.div>
+        )}
+
+        {/* Superlike Animation Toast */}
+        <AnimatePresence>
+          {superlikeToast && superlikeToast.contentId === activeCard.id && (
+            <motion.div
+              initial={{ opacity: 0, y: -20, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="absolute top-10 inset-x-4 z-50 bg-amber-500/90 backdrop-blur-md text-white p-3 rounded-2xl font-black text-sm text-center shadow-xl border border-amber-400 flex items-center justify-center gap-2"
+            >
+              <Zap className="w-5 h-5 fill-current" />
+              {superlikeToast.username} superliked this {activeCard.mediaType === 'tv' ? 'show' : 'movie'}!
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Controller Buttons Bar */}

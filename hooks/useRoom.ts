@@ -16,7 +16,7 @@ export function useRoom(
 ) {
   const [room, setRoom] = useState<Room | null>(null);
   const [members, setMembers] = useState<RoomMember[]>([]);
-  const [activeSwipes, setActiveSwipes] = useState<Record<number, Record<string, 'like' | 'dislike' | 'superlike'>>>({});
+  const [activeSwipes, setActiveSwipes] = useState<Record<number, Record<string, { direction: 'like' | 'dislike' | 'superlike', timestamp: number }>>>({});
   const [isJoined, setIsJoined] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +25,7 @@ export function useRoom(
 
   const channelRef = useRef<any>(null);
   const matchedTrackerRef = useRef<Set<number>>(new Set());
+  const superlikeTrackerRef = useRef<Set<string>>(new Set());
   const isLocalMock = !hasSupabase() || !supabase;
 
   // Helper to generate a valid RFC4122 v4 UUID
@@ -205,16 +206,19 @@ export function useRoom(
         // Fetch historical swipes from DB to rebuild current swipes state
         const { data: allSwipes } = await supabase!
           .from('swipes')
-          .select('user_id, content_id, direction')
+          .select('user_id, content_id, direction, swiped_at')
           .eq('room_id', existingRoom.id);
 
         if (allSwipes && allSwipes.length > 0) {
-          const swipesMap: Record<number, Record<string, 'like' | 'dislike' | 'superlike'>> = {};
+          const swipesMap: Record<number, Record<string, { direction: 'like' | 'dislike' | 'superlike', timestamp: number }>> = {};
           allSwipes.forEach((s) => {
             if (!swipesMap[s.content_id]) {
               swipesMap[s.content_id] = {};
             }
-            swipesMap[s.content_id][s.user_id] = s.direction as any;
+            swipesMap[s.content_id][s.user_id] = { 
+              direction: s.direction as any, 
+              timestamp: new Date(s.swiped_at || Date.now()).getTime() 
+            };
           });
           setActiveSwipes(swipesMap);
           
@@ -275,11 +279,33 @@ export function useRoom(
         // Check for matches dynamically from synced swipes
         if (syncData.activeSwipes) {
           const currentMembers = syncData.members || [];
+          
+          // Trigger superlike animations in mock mode
+          if (isLocalMock) {
+            Object.entries(syncData.activeSwipes).forEach(([movieIdStr, swipesObj]) => {
+              const movieId = parseInt(movieIdStr, 10);
+              Object.entries(swipesObj as Record<string, { direction: string; timestamp: number }>).forEach(([swipingUserId, swipeData]) => {
+                if (swipeData.direction === 'superlike') {
+                  const uniqueKey = `${movieId}-${swipingUserId}`;
+                  if (!superlikeTrackerRef.current.has(uniqueKey)) {
+                    superlikeTrackerRef.current.add(uniqueKey);
+                    const swiperMember = currentMembers.find((m: any) => m.user_id === swipingUserId);
+                    if (swiperMember) {
+                      window.dispatchEvent(new CustomEvent('cineswipe-superlike', {
+                        detail: { username: swiperMember.username, contentId: movieId }
+                      }));
+                    }
+                  }
+                }
+              });
+            });
+          }
+
           if (currentMembers.length > 1) {
             Object.keys(syncData.activeSwipes).forEach((movieIdStr) => {
               const movieId = parseInt(movieIdStr, 10);
-              const movieSwipes = syncData.activeSwipes[movieId];
-              const likes = Object.values(movieSwipes).filter((d) => d === 'like' || d === 'superlike');
+              const movieSwipes = syncData.activeSwipes[movieId] as Record<string, { direction: string, timestamp: number }>;
+              const likes = Object.values(movieSwipes).filter((s) => s.direction === 'like' || s.direction === 'superlike');
 
               // If everyone has liked this movie and we haven't matched it yet locally
               if (likes.length >= currentMembers.length) {
@@ -354,8 +380,16 @@ export function useRoom(
 
     // 2. Listen to WebSocket Broadcast for swipe actions (eliminates DB replication requirements)
     channel.on('broadcast', { event: 'swipe-action' }, (payload) => {
-      const { user_id, content_id, direction } = payload.payload;
-      recordRoomSwipe(user_id, content_id, direction);
+      const { user_id, content_id, direction, timestamp, username: swiperName } = payload.payload;
+      recordRoomSwipe(user_id, content_id, direction, timestamp);
+      
+      // Superlike animation event
+      if (direction === 'superlike' && swiperName) {
+        // Dispatch a custom event to the window so MovieCard/SwipeDeck can show an animation
+        window.dispatchEvent(new CustomEvent('cineswipe-superlike', {
+          detail: { username: swiperName, contentId: content_id }
+        }));
+      }
     });
 
     channel.on('broadcast', { event: 'undo-swipe-action' }, (payload) => {
@@ -394,10 +428,13 @@ export function useRoom(
   };
 
   const recordRoomSwipe = useCallback(
-    (swipeUserId: string, contentId: number, direction: 'like' | 'dislike' | 'superlike') => {
+    (swipeUserId: string, contentId: number, direction: 'like' | 'dislike' | 'superlike', timestamp?: number) => {
       setActiveSwipes((prev) => {
         const currentMovieSwipes = prev[contentId] || {};
-        const updatedMovieSwipes = { ...currentMovieSwipes, [swipeUserId]: direction };
+        const updatedMovieSwipes = { 
+          ...currentMovieSwipes, 
+          [swipeUserId]: { direction, timestamp: timestamp || Date.now() } 
+        };
         return { ...prev, [contentId]: updatedMovieSwipes };
       });
     },
@@ -446,6 +483,8 @@ export function useRoom(
           user_id: userId,
           content_id: content.id,
           direction: direction,
+          timestamp: Date.now(),
+          username: username,
         },
       });
     }
@@ -469,10 +508,10 @@ export function useRoom(
       setActiveSwipes((currentSwipes) => {
         const movieSwipes = {
           ...(currentSwipes[content.id] || {}),
-          [userId]: direction,
+          [userId]: { direction, timestamp: Date.now() },
         };
 
-        const likes = Object.values(movieSwipes).filter((d) => d === 'like' || d === 'superlike');
+        const likes = Object.values(movieSwipes).filter((s) => s.direction === 'like' || s.direction === 'superlike');
 
         // It is a MATCH if everyone in the room has swiped positively
         if (likes.length >= members.length && members.length > 1) {

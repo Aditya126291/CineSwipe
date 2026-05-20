@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, History, Sparkles, AlertTriangle, Eye, Video } from 'lucide-react';
 import Link from 'next/link';
 import { useMovies } from '@/hooks/useMovies';
 import { usePremium } from '@/hooks/usePremium';
 import { useSwipeDeck } from '@/hooks/useSwipeDeck';
+import { initializeWeights, updateFeedWeights } from '@/lib/recommendations';
 import ThemeToggle from '@/components/ThemeToggle';
 import SwipeCounter from '@/components/SwipeCounter';
 import GenreFilter from '@/components/GenreFilter';
@@ -31,12 +32,76 @@ export default function SoloSwipePage() {
     setUpgradeOpen(true);
   };
 
+  // Initialize weights in localStorage on mount if not exists
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('cineswipe-genre-weights');
+      if (!stored) {
+        localStorage.setItem('cineswipe-genre-weights', JSON.stringify(initializeWeights()));
+      }
+      localStorage.removeItem('cineswipe-genre-weights-history');
+    }
+  }, []);
+
   const handleSwipeRecord = async (movieId: number, direction: 'like' | 'dislike' | 'superlike') => {
     // Record Swipe Count
     const allowed = await incrementSwipeCount();
     if (!allowed && !isPremium) {
       handleLimitExceeded();
       return;
+    }
+
+    // Capture the weights before modification to push onto history stack
+    if (typeof window !== 'undefined') {
+      let currentWeights = initializeWeights();
+      let lastLikedGenre: number | null = null;
+
+      const storedWeights = localStorage.getItem('cineswipe-genre-weights');
+      const storedLastLiked = localStorage.getItem('cineswipe-last-liked-genre');
+
+      if (storedWeights) {
+        try {
+          currentWeights = JSON.parse(storedWeights);
+        } catch (e) {
+          console.error('Failed to parse stored genre weights', e);
+        }
+      }
+      if (storedLastLiked) {
+        const parsed = parseInt(storedLastLiked, 10);
+        if (!isNaN(parsed)) {
+          lastLikedGenre = parsed;
+        }
+      }
+
+      // Save to history stack
+      const storedHistory = localStorage.getItem('cineswipe-genre-weights-history') || '[]';
+      let historyStack = [];
+      try {
+        historyStack = JSON.parse(storedHistory);
+        if (!Array.isArray(historyStack)) historyStack = [];
+      } catch (e) {
+        historyStack = [];
+      }
+      historyStack.push({ weights: currentWeights, lastLikedGenre });
+      localStorage.setItem('cineswipe-genre-weights-history', JSON.stringify(historyStack));
+
+      // Intercept solo likes and superlikes to update recommendation weights
+      if (direction === 'like' || direction === 'superlike') {
+        const swipedMovie = movies.find((m) => m.id === movieId);
+        const primaryGenre = swipedMovie?.genreIds?.[0];
+
+        if (primaryGenre) {
+          const newState = updateFeedWeights(
+            { weights: currentWeights, lastLikedGenre },
+            primaryGenre
+          );
+
+          localStorage.setItem('cineswipe-genre-weights', JSON.stringify(newState.weights));
+          if (newState.lastLikedGenre !== null) {
+            localStorage.setItem('cineswipe-last-liked-genre', newState.lastLikedGenre.toString());
+          }
+        }
+      }
     }
   };
 
@@ -49,6 +114,36 @@ export default function SoloSwipePage() {
     swipe,
     undo,
   } = useSwipeDeck(movies, handleSwipeRecord, handleLimitExceeded);
+
+  const handleUndo = () => {
+    // Restore previous weights from history if applicable
+    if (typeof window !== 'undefined') {
+      const storedHistory = localStorage.getItem('cineswipe-genre-weights-history');
+      if (storedHistory) {
+        try {
+          const historyStack = JSON.parse(storedHistory);
+          if (Array.isArray(historyStack) && historyStack.length > 0) {
+            const previousState = historyStack.pop();
+            if (previousState && previousState.weights) {
+              localStorage.setItem('cineswipe-genre-weights', JSON.stringify(previousState.weights));
+              if (previousState.lastLikedGenre !== undefined) {
+                if (previousState.lastLikedGenre === null) {
+                  localStorage.removeItem('cineswipe-last-liked-genre');
+                } else {
+                  localStorage.setItem('cineswipe-last-liked-genre', previousState.lastLikedGenre.toString());
+                }
+              }
+              localStorage.setItem('cineswipe-genre-weights-history', JSON.stringify(historyStack));
+            }
+          }
+        } catch (e) {
+          console.error('Failed to restore weights on undo', e);
+        }
+      }
+    }
+    // Call the original undo hook function
+    undo();
+  };
 
   const handleGenreSelect = (genreId?: number) => {
     setSelectedGenreId(genreId);
@@ -149,7 +244,7 @@ export default function SoloSwipePage() {
               onSwipe={handleSwipeAction}
               isPremium={isPremium}
               onUpgradePrompt={() => setUpgradeOpen(true)}
-              undo={undo}
+              undo={handleUndo}
               historyLength={history.length}
             />
           )}
@@ -166,7 +261,7 @@ export default function SoloSwipePage() {
         liked={liked}
         disliked={disliked}
         superLiked={superLiked}
-        undo={undo}
+        undo={handleUndo}
         isPremium={isPremium}
         onUpgradePrompt={() => setUpgradeOpen(true)}
       />

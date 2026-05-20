@@ -61,6 +61,7 @@ export default function RoomPage({ params }: PageProps) {
     members,
     loading: roomLoading,
     error: roomError,
+    activeSwipes,
     userId,
     sendSwipe,
     undoSwipe,
@@ -216,6 +217,8 @@ export default function RoomPage({ params }: PageProps) {
                   onSwipe={handleSwipeAction}
                   isPremium={isPremium}
                   onUpgradePrompt={() => setUpgradeOpen(true)}
+                  activeSwipes={activeSwipes}
+                  totalMembers={members.length}
                   undo={() => {
                     setMoviesMatchedCount((prev) => {
                       const newCount = Math.max(0, prev - 1);
@@ -237,6 +240,7 @@ export default function RoomPage({ params }: PageProps) {
                   matchedMovies={matchedList}
                   isPremium={isPremium}
                   onUpgradePrompt={() => setUpgradeOpen(true)}
+                  activeSwipes={activeSwipes}
                 />
               </div>
             )}
