@@ -12,6 +12,7 @@ export default function Home() {
   const [multiplayerOpen, setMultiplayerOpen] = useState<boolean>(false);
   const [roomCode, setRoomCode] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [joinError, setJoinError] = useState<string>('');
 
   // Generate 6-char alphanumeric room code
   const handleCreateRoom = () => {
@@ -21,13 +22,28 @@ export default function Home() {
     for (let i = 0; i < 6; i++) {
       code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-    router.push(`/room/${code}`);
+    router.push(`/room/${code}?host=true`);
   };
 
-  const handleJoinRoom = (e: React.FormEvent) => {
+  const handleJoinRoom = async (e: React.FormEvent) => {
     e.preventDefault();
+    setJoinError('');
     if (!roomCode.trim() || roomCode.trim().length !== 6) return;
-    router.push(`/room/${roomCode.trim().toUpperCase()}`);
+
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/rooms?code=${roomCode.trim().toUpperCase()}`);
+      if (!res.ok) {
+        const data = await res.json();
+        setJoinError(data.error || 'Room not found');
+        setLoading(false);
+        return;
+      }
+      router.push(`/room/${roomCode.trim().toUpperCase()}`);
+    } catch (err) {
+      setJoinError('Failed to verify room');
+      setLoading(false);
+    }
   };
 
   return (
@@ -145,21 +161,24 @@ export default function Home() {
                   <p className="text-[10px] text-zinc-400 leading-normal">
                     Enter the access code shared by your popcorn host.
                   </p>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="E.g. MZ94X7"
-                      value={roomCode}
-                      onChange={(e) => setRoomCode(e.target.value.substring(0, 6))}
-                      className="flex-1 px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-navy-950 font-black text-sm uppercase tracking-widest text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500"
-                    />
-                    <button
-                      type="submit"
-                      disabled={roomCode.trim().length !== 6}
-                      className="px-5 rounded-xl bg-zinc-950 dark:bg-white text-white dark:text-black font-extrabold text-xs tracking-wider uppercase transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:scale-100 shrink-0"
-                    >
-                      Join
-                    </button>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="E.g. MZ94X7"
+                        value={roomCode}
+                        onChange={(e) => setRoomCode(e.target.value.substring(0, 6))}
+                        className="flex-1 px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-navy-950 font-black text-sm uppercase tracking-widest text-zinc-900 dark:text-white focus:outline-none focus:border-violet-500"
+                      />
+                      <button
+                        type="submit"
+                        disabled={roomCode.trim().length !== 6 || loading}
+                        className="px-5 rounded-xl bg-zinc-950 dark:bg-white text-white dark:text-black font-extrabold text-xs tracking-wider uppercase transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:scale-100 shrink-0 flex items-center justify-center min-w-[70px]"
+                      >
+                        {loading ? <span className="w-4 h-4 border-2 border-white dark:border-black border-t-transparent rounded-full animate-spin" /> : 'Join'}
+                      </button>
+                    </div>
+                    {joinError && <span className="text-xs text-rose-500 font-bold">{joinError}</span>}
                   </div>
                 </form>
               </div>

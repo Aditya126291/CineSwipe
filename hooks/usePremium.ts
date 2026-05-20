@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { safeStorage } from '@/lib/storage';
+import { safeStorage, safeSessionStorage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase/client';
 
 export interface PremiumState {
@@ -40,12 +40,12 @@ export function usePremium(userId?: string) {
     // 1. Resolve or generate valid UUID
     let activeId = userId;
     if (!activeId) {
-      activeId = safeStorage.getItem('cineswipe-user-id') || '';
+      activeId = safeSessionStorage.getItem('cineswipe-user-id') || '';
     }
     
     if (!activeId || !isValidUUID(activeId)) {
       activeId = generateUUID();
-      safeStorage.setItem('cineswipe-user-id', activeId);
+      safeSessionStorage.setItem('cineswipe-user-id', activeId);
     }
     
     setResolvedUserId(activeId);

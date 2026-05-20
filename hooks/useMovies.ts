@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { getPopularMovies, getPopularTV, normalizeToContentItem, getGenres } from '@/lib/tmdb/movies';
-import { getMockContent, MOCK_GENRES } from '@/lib/tmdb/mock-data';
+import { getMockContent, MOCK_GENRES, seededRandom } from '@/lib/tmdb/mock-data';
 import { hasTMDBKey } from '@/lib/tmdb/client';
 import type { ContentItem, Genre } from '@/lib/tmdb/types';
 
-export function useMovies(mediaType: 'movie' | 'tv' | 'all', genreId?: number) {
+export function useMovies(mediaType: 'movie' | 'tv' | 'all', genreId?: number, shuffleSeed?: string) {
   const [movies, setMovies] = useState<ContentItem[]>([]);
   const [genres, setGenres] = useState<Genre[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -79,27 +79,37 @@ export function useMovies(mediaType: 'movie' | 'tv' | 'all', genreId?: number) {
           })
         );
 
-        setMovies((prev) => (clear ? enriched : [...prev, ...enriched]));
+        if (shuffleSeed) {
+          const rng = seededRandom(shuffleSeed + '_' + pageNum);
+          const shuffled = [...enriched];
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(rng() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          }
+          setMovies((prev) => (clear ? shuffled : [...prev, ...shuffled]));
+        } else {
+          setMovies((prev) => (clear ? enriched : [...prev, ...enriched]));
+        }
       } else {
         // Mock data fallback
-        const mockData = getMockContent(mediaType, genreId);
+        const mockData = getMockContent(mediaType, genreId, shuffleSeed);
         setMovies((prev) => (clear ? mockData : [...prev, ...mockData]));
       }
     } catch (err: any) {
       console.error('Failed to fetch movies', err);
       // Failover to mock data so it NEVER crashes
-      const mockData = getMockContent(mediaType, genreId);
+      const mockData = getMockContent(mediaType, genreId, shuffleSeed);
       setMovies((prev) => (clear ? mockData : [...prev, ...mockData]));
     } finally {
       setLoading(false);
     }
-  }, [mediaType, genreId]);
+  }, [mediaType, genreId, shuffleSeed]);
 
-  // Reload movies when filters change
+  // Reload movies when filters change or when shuffleSeed changes (important for lobby startup sync)
   useEffect(() => {
     setPage(1);
     loadMovies(1, true);
-  }, [mediaType, genreId, loadMovies]);
+  }, [mediaType, genreId, shuffleSeed, loadMovies]);
 
   const loadMore = () => {
     const nextPage = page + 1;

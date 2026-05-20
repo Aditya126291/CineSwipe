@@ -180,6 +180,17 @@ export default function SwipeDeck({
 
       {/* Controller Buttons Bar */}
       <div className="flex items-center justify-center gap-4 mt-2">
+        {/* Undo button */}
+        {historyLength > 0 && (
+          <button
+            onClick={undo}
+            className="w-12 h-12 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-navy-900/90 text-violet-600 dark:text-violet-400 hover:scale-110 active:scale-95 transition-all shadow-md flex items-center justify-center"
+            title="Undo"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+          </button>
+        )}
+
         {/* Dislike / Nope button */}
         <button
           onClick={() => triggerButtonSwipe('dislike')}

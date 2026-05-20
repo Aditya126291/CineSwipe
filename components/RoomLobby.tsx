@@ -32,7 +32,7 @@ export default function RoomLobby({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const maxMembersLimit = isPremium ? 10 : 3;
+  const maxMembersLimit = room.max_members || (isPremium ? 10 : 3);
   const isFull = members.length >= maxMembersLimit;
 
   return (

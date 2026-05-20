@@ -534,7 +534,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 1396,
     title: 'Breaking Bad',
     overview: 'When Walter White, a New Mexico chemistry teacher, is diagnosed with Stage III cancer and given a prognosis of two years left to live, he becomes filled with a sense of fearlessness.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/ztK6o1wG6Ma2vC624UHGQ25YGC.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/ztkgnFjNqU0y4uR9YQ9C7Q26sC1.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/tsRy63Mu5cu8etL1X7ZLyf7UP1M.jpg',
     releaseYear: '2008',
     rating: 8.9,
@@ -551,7 +551,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 1399,
     title: 'Game of Thrones',
     overview: 'Seven noble families fight for control of the mythical land of Westeros. Friction between the houses leads to full-scale war.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/1XSx0LEiDq2v49a183H1lP4J96B.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/2OMB0ynKlyIenMJWI2Dy9IWT4c.jpg',
     releaseYear: '2011',
     rating: 8.4,
@@ -568,7 +568,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 66732,
     title: 'Stranger Things',
     overview: 'When a young boy vanishes, a small town uncovers a mystery involving secret experiments, terrifying supernatural forces, and one strange little girl.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/49WJfeN0moxb9IPfGn8AIqMGskD.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/49WJEVy0aP2xcJNTm1g97PjJq8y.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/56v2KjBlYj4fOhLEnDAJZRLoAVb.jpg',
     releaseYear: '2016',
     rating: 8.6,
@@ -602,7 +602,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 100088,
     title: 'The Last of Us',
     overview: 'Twenty years after modern civilization has been destroyed, Joel, a hardened survivor, is hired to smuggle Ellie out of an oppressive quarantine zone.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/uDgy6hyPd82kOHh6I95FLtLnj6p.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/uDgy6hyPd82kOHh6I95FLtLnj6p.jpg',
     releaseYear: '2023',
     rating: 8.6,
@@ -619,7 +619,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 76479,
     title: 'The Boys',
     overview: 'A group of vigilantes set out to take down corrupt superheroes who abuse their superpowers rather than using them for good.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/stTEycfG9Ev8YwoozdMPcH8III.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/7Ns7Jzw61VfeasjTxJ1nU4a4jrz.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/7q448EVOnuE3gVAx24krzO7SNXM.jpg',
     releaseYear: '2019',
     rating: 8.5,
@@ -653,7 +653,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 2316,
     title: 'The Office',
     overview: 'A mockumentary on a group of typical office workers, where the workday consists of ego clashes, inappropriate behavior, and tedium.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/77Refo15tFwyR9NPQ5vpzxTj19Q.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/qrvCbw6OejJ8X1wWw6C9vAgbG6R.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/2t71s2gX3jQ0y4H9mNnQkG7y3t.jpg',
     releaseYear: '2005',
     rating: 8.6,
@@ -669,7 +669,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 1668,
     title: 'Friends',
     overview: 'Six young people navigate their personal and professional lives in Manhattan, sharing their romances, struggles, and laughs in this iconic sitcom.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/f4961Z3gO2hbHG6MUJg2Z2R7Bhv.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/f496cm9enuEsZgSPzCwnTICQR53.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/qdIMHd4sEfJSckfVJfKQvisL02a.jpg',
     releaseYear: '1994',
     rating: 8.5,
@@ -685,7 +685,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 48891,
     title: 'Brooklyn Nine-Nine',
     overview: 'A comedy following the exploits of Detective Jake Peralta and his diverse, lovable colleagues as they police the NYPD\'s 99th Precinct.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/185g9V2h5Jcxz5nK46pq6hyjW5G.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/hgqWeaQMQA2T2dZl1F40Y3aWv12.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/5GB26w3z2kuv7SRn68B5t5vSMRc.jpg',
     releaseYear: '2013',
     rating: 8.2,
@@ -701,7 +701,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 60625,
     title: 'Rick and Morty',
     overview: 'An animated series that follows the exploits of a super scientist and his easily influenced grandson, traveling across alternate dimensions.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/cvHN8gB5t5vSMRcwP1NnU6A0u02.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/cvhGNyRkH1w2WJ98tHk4N9V2Yq.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/fNG7i7RqMErkcqhohV2a6cV1Ehy.jpg',
     releaseYear: '2013',
     rating: 8.7,
@@ -717,7 +717,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 19885,
     title: 'Sherlock',
     overview: 'A modern update finds the famous sleuth and his doctor partner solving bizarre crimes in 21st century London with brilliance and high technology.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/78Refo15tFwyR9NPQ5vpzxTj19Q.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/7J1kLZFLgD1jS2D63qPmbd2L2uB.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/suaEOtk1N1sgg2MTM7oZd2cfVp3.jpg',
     releaseYear: '2010',
     rating: 8.5,
@@ -733,7 +733,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 93405,
     title: 'Squid Game',
     overview: 'Hundreds of cash-strapped players accept a strange invitation to compete in children\'s games. Inside, a tempting prize awaits with deadly high stakes.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/dDlE9Z32kX3hOaO040pA92l7Wf7.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/tsRy63Mu5cu8etL1X7ZLyf7UP1M.jpg',
     releaseYear: '2021',
     rating: 7.8,
@@ -765,7 +765,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 1402,
     title: 'The Walking Dead',
     overview: 'Sheriff\'s deputy Rick Grimes leads a group of survivors in a world overrun by zombies, fighting for survival against walking dead and living threats.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/n7P45778zs8Vz36HYsLJ4pqZ45.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/xf9ZpI4SjP8y2bL463bKk5O7lP.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/56v2KjBlYj4fOhLEnDAJZRLoAVb.jpg',
     releaseYear: '2010',
     rating: 8.1,
@@ -781,7 +781,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 1413,
     title: 'American Horror Story',
     overview: 'An anthology series centering on different characters and locations, including a murder house, an insane asylum, a witch coven, a freak show, and a hotel.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/9E2y6li6Z98rTE7bfYq0mgG0tTx.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/ti8iYH9iV146Z98pP1j5C5C2Etq.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/tcheoA2n6X2452v2X7gR87tCc9x.jpg',
     releaseYear: '2011',
     rating: 8.0,
@@ -797,7 +797,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 80986,
     title: 'The Haunting of Hill House',
     overview: 'Flashing between past and present, a fractured family confronts haunting memories of their old home and the terrifying events that drove them from it.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/w9kR8qbm2yo6L661wFGDV0YjDty.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/vNPUqSmbI82vQ1O18R1xI60V9q4.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/ocUrn7j6M2v7copgGK7kgqal23L.jpg',
     releaseYear: '2018',
     rating: 8.6,
@@ -813,7 +813,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 112888,
     title: 'Bridgerton',
     overview: 'Wealth, lust, and betrayal set against the backdrop of Regency-era England, seen through the eyes of the powerful Bridgerton family.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/uC6TTN1Rxj6v2bg2FaY5eSGScaG.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/luoKpgVwi1E5nQsi7W0UuKHu2Rq.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/28f8n41N9Dq77YvY457788P890K.jpg',
     releaseYear: '2020',
     rating: 8.1,
@@ -829,7 +829,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 94796,
     title: 'Crash Landing on You',
     overview: 'A South Korean heiress accidentally paraglides into North Korea, where she is hidden by an army officer who falls in love with her.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/iiRs6wP9Nh474JZIS2Vd2k2kr0g.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/Askg6SM2ee7jUiVj2RjaRyp4RdB.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/Askg6SM2ee7jUiVj2RjaRyp4RdB.jpg',
     releaseYear: '2019',
     rating: 8.7,
@@ -861,7 +861,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 246,
     title: 'Avatar: The Last Airbender',
     overview: 'In a war-torn world of elemental magic, a young boy awakens to undertake a dangerous mystic quest to fulfill his destiny as the Avatar, and bring peace to the world.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/stTEycfG9Ev8YwoozdMPcH8III.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/ejdJ32gqQYyqZ9d67w2eC7C4m4W.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/Askg6SM2ee7jUiVj2RjaRyp4RdB.jpg',
     releaseYear: '2005',
     rating: 8.7,
@@ -877,7 +877,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 1429,
     title: 'Attack on Titan',
     overview: 'Several hundred years ago, humans were nearly exterminated by giants. A small percentage of humanity survived by shutting themselves in a city protected by extremely high walls.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/iiRs6wP9Nh474JZIS2Vd2k2kr0g.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/hTP1LEnkG2W2V3yqKqH3a0d5G6d.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/vxGkPZ99t1fD732gC45Y268D7iM.jpg',
     releaseYear: '2013',
     rating: 8.7,
@@ -921,7 +921,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 98516,
     title: 'The Last Dance',
     overview: 'A 10-part documentary series detailing the career of Michael Jordan and the 1990s Chicago Bulls, featuring never-before-seen footage from the legendary 1997-98 season.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/ztK6o1wG6Ma2vC624UHGQ25YGC.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/8sa567jU9F0DqP1QkP1j5C5C2E.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/5GB26w3z2kuv7SRn68B5t5vSMRc.jpg',
     releaseYear: '2020',
     rating: 8.7,
@@ -953,7 +953,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 60574,
     title: 'Peaky Blinders',
     overview: 'A notorious gang in 1919 Birmingham, England, is led by the fierce Tommy Shelby, a crime boss set on moving up in the world no matter the cost.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/stTEycfG9Ev8YwoozdMPcH8III.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/7sqFEDDmK1hG5m92upolcfQxy7R.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/28f8n41N9Dq77YvY457788P890K.jpg',
     releaseYear: '2013',
     rating: 8.5,
@@ -969,7 +969,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 74204,
     title: 'Mindhunter',
     overview: 'In the late 1970s, two FBI agents expand criminal science by delving into the psychology of murder and uneasily getting too close to all-too-real monsters.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/ek8goz3x2kuv7SRn68B5t5vSMRc.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/dz259P1j5C5C2E.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/5GB26w3z2kuv7SRn68B5t5vSMRc.jpg',
     releaseYear: '2017',
     rating: 8.4,
@@ -985,7 +985,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 71446,
     title: 'Money Heist',
     overview: 'To carry out the biggest heist in history, a mysterious man called The Professor recruits a band of eight robbers who have single-name aliases.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/ztK6o1wG6Ma2vC624UHGQ25YGC.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/re9ZpI4SjP8y2bL463bKk5O7lP.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/rkB4LyZHo1NHXFEDHl9vSD9r1lI.jpg',
     releaseYear: '2017',
     rating: 8.3,
@@ -1001,7 +1001,7 @@ export const MOCK_CONTENT: ContentItem[] = [
     id: 95396,
     title: 'Severance',
     overview: 'Mark leads a team of office workers whose memories have been surgically divided between their work and personal lives, sparking a quest to uncover the truth.',
-    posterUrl: 'https://image.tmdb.org/t/p/w500/stTEycfG9Ev8YwoozdMPcH8III.jpg',
+    posterUrl: 'https://image.tmdb.org/t/p/w500/bdBk7xaA805pt2jPL1665bHkZvv.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/w1280/ocUrn7j6M2v7copgGK7kgqal23L.jpg',
     releaseYear: '2022',
     rating: 8.4,
@@ -1013,9 +1013,23 @@ export const MOCK_CONTENT: ContentItem[] = [
   },
 ];
 
+export function seededRandom(seed: string) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = Math.imul(31, h) + seed.charCodeAt(i) | 0;
+  }
+  return function() {
+    let t = h += 0x6D2B79F5;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 export function getMockContent(
   mediaType: 'movie' | 'tv' | 'all' = 'all',
-  genreId?: number
+  genreId?: number,
+  shuffleSeed?: string
 ): ContentItem[] {
   let filtered = MOCK_CONTENT;
   
@@ -1025,6 +1039,16 @@ export function getMockContent(
   
   if (genreId) {
     filtered = filtered.filter(item => item.genreIds.includes(genreId));
+  }
+  
+  if (shuffleSeed) {
+    const rng = seededRandom(shuffleSeed);
+    const result = [...filtered];
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
   }
   
   // Shuffle dynamically for infinite discovery feel

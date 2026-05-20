@@ -5,6 +5,7 @@ import { safeStorage } from '@/lib/storage';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Sparkles, Film, History, Users, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useRoom } from '@/hooks/useRoom';
 import { useMovies } from '@/hooks/useMovies';
 import { usePremium } from '@/hooks/usePremium';
@@ -28,7 +29,6 @@ export default function RoomPage({ params }: PageProps) {
   const [username, setUsername] = useState<string>('');
   const [avatarColor, setAvatarColor] = useState<string>('#7c3aed');
   const [nameSaved, setNameSaved] = useState<boolean>(false);
-  const [isSwipingStarted, setIsSwipingStarted] = useState<boolean>(false);
 
   // Modal triggers
   const [upgradeOpen, setUpgradeOpen] = useState<boolean>(false);
@@ -41,7 +41,7 @@ export default function RoomPage({ params }: PageProps) {
 
   // Core Hooks
   const { isPremium, triggerRazorpayCheckout } = usePremium();
-  const { movies, loading } = useMovies('all'); // By default combined movie + series
+  const { movies, loading } = useMovies('all', undefined, roomCode); // Pass roomCode as shuffleSeed for identical deck ordering
 
   const handleMatchTrigger = (movie: ContentItem, reason?: string) => {
     setMatchedMovie(movie);
@@ -53,6 +53,9 @@ export default function RoomPage({ params }: PageProps) {
     });
   };
 
+  const searchParams = useSearchParams();
+  const isHostMode = searchParams.get('host') === 'true';
+
   const {
     room,
     members,
@@ -60,7 +63,10 @@ export default function RoomPage({ params }: PageProps) {
     error: roomError,
     userId,
     sendSwipe,
-  } = useRoom(roomCode, username, avatarColor, isPremium, handleMatchTrigger);
+    undoSwipe,
+    isSwipingStarted,
+    startSession,
+  } = useRoom(roomCode, username, avatarColor, isPremium, handleMatchTrigger, isHostMode);
 
   // Assign random username & color initially
   useEffect(() => {
@@ -94,6 +100,31 @@ export default function RoomPage({ params }: PageProps) {
   };
 
   const [moviesMatchedCount, setMoviesMatchedCount] = useState<number>(0);
+
+  if (roomLoading) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-navy-950 flex flex-col justify-center items-center">
+        <RefreshCw className="w-8 h-8 animate-spin text-violet-500" />
+      </div>
+    );
+  }
+
+  if (roomError) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-navy-950 text-zinc-900 dark:text-white flex flex-col justify-center items-center p-6">
+        <div className="w-full max-w-sm p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-navy-900 shadow-2xl flex flex-col gap-6 text-center animate-scale-in">
+          <div className="p-3 rounded-2xl bg-rose-500/10 text-rose-500 mx-auto mb-2">
+            <span className="text-2xl">🚨</span>
+          </div>
+          <h2 className="text-xl font-black text-rose-500">Room Not Found</h2>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">{roomError}</p>
+          <Link href="/" className="w-full py-3 mt-2 rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-black font-extrabold text-xs uppercase flex items-center justify-center gap-2">
+            <ArrowLeft className="w-4 h-4" /> Back to Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (!nameSaved) {
     return (
@@ -150,23 +181,15 @@ export default function RoomPage({ params }: PageProps) {
 
       {/* Main Party Room Screen Grid */}
       <main className="flex-1 flex flex-col items-center justify-center p-6 max-w-md mx-auto w-full">
-        {roomLoading ? (
-          <div className="flex flex-col items-center gap-3 text-zinc-500">
-            <RefreshCw className="w-8 h-8 animate-spin text-violet-500" />
-            <span className="text-xs font-bold">Connecting to real-time sync party...</span>
-          </div>
-        ) : roomError ? (
-          <div className="flex flex-col items-center gap-3 text-rose-500 text-center">
-            <span className="text-xs font-bold">{roomError}</span>
-          </div>
-        ) : !isSwipingStarted ? (
+        {/* Handling logic already lifted out */}
+        {!isSwipingStarted ? (
           /* LOBBY STAGE */
           <RoomLobby
             room={room!}
             members={members}
             userId={userId}
             isHost={room!.created_by === userId}
-            onStart={() => setIsSwipingStarted(true)}
+            onStart={startSession}
             isPremium={isPremium}
             onUpgradePrompt={() => setUpgradeOpen(true)}
           />
@@ -194,7 +217,13 @@ export default function RoomPage({ params }: PageProps) {
                   isPremium={isPremium}
                   onUpgradePrompt={() => setUpgradeOpen(true)}
                   undo={() => {
-                    setMoviesMatchedCount((prev) => Math.max(0, prev - 1));
+                    setMoviesMatchedCount((prev) => {
+                      const newCount = Math.max(0, prev - 1);
+                      if (movies[newCount]) {
+                        undoSwipe(movies[newCount].id);
+                      }
+                      return newCount;
+                    });
                   }}
                   historyLength={moviesMatchedCount}
                 />

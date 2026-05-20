@@ -36,3 +36,37 @@ export const safeStorage = {
     }
   }
 };
+
+export const safeSessionStorage = {
+  getItem(key: string): string | null {
+    try {
+      if (typeof window === 'undefined') return null;
+      return window.sessionStorage.getItem(key);
+    } catch (e) {
+      console.warn(`sessionStorage.getItem failed for key "${key}", using memory fallback:`, e);
+      return memoryStore[key] || null;
+    }
+  },
+
+  setItem(key: string, value: string): void {
+    try {
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.setItem(key, value);
+      }
+    } catch (e) {
+      console.warn(`sessionStorage.setItem failed for key "${key}", using memory fallback:`, e);
+      memoryStore[key] = value;
+    }
+  },
+
+  removeItem(key: string): void {
+    try {
+      if (typeof window !== 'undefined') {
+        window.sessionStorage.removeItem(key);
+      }
+    } catch (e) {
+      console.warn(`sessionStorage.removeItem failed for key "${key}", using memory fallback:`, e);
+      delete memoryStore[key];
+    }
+  }
+};

@@ -18,45 +18,69 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const [posterSrc, setPosterSrc] = useState<string>('');
-  const [backdropSrc, setBackdropSrc] = useState<string>('');
-  const posterRetryRef = useRef<number>(0);
-  const backdropRetryRef = useRef<number>(0);
+  const [posterRetryCount, setPosterRetryCount] = useState<Record<number, number>>({});
+  const [backdropRetryCount, setBackdropRetryCount] = useState<Record<number, number>>({});
 
-  // Synchronize poster and backdrop states when the movie changes, resetting retry counters
-  useEffect(() => {
-    setPosterSrc(movie.posterUrl || '/poster-placeholder.svg');
-    setBackdropSrc(movie.backdropUrl || movie.posterUrl || '/poster-placeholder.svg');
-    posterRetryRef.current = 0;
-    backdropRetryRef.current = 0;
-  }, [movie]);
+  // Synchronously compute the poster source at render time
+  const currentPosterRetry = posterRetryCount[movie.id] || 0;
+  let posterSrc: string;
+  if (!movie.posterUrl) {
+    posterSrc = '/poster-placeholder.svg';
+  } else if (currentPosterRetry >= 3) {
+    posterSrc = '/poster-placeholder.svg';
+  } else if (currentPosterRetry > 0) {
+    const separator = movie.posterUrl.includes('?') ? '&' : '?';
+    posterSrc = `${movie.posterUrl}${separator}retry=${currentPosterRetry}`;
+  } else {
+    posterSrc = movie.posterUrl;
+  }
+
+  // Synchronously compute the backdrop source at render time
+  const currentBackdropRetry = backdropRetryCount[movie.id] || 0;
+  const originalBackdropUrl = movie.backdropUrl || movie.posterUrl;
+  let backdropSrc: string;
+  if (!originalBackdropUrl) {
+    backdropSrc = '/poster-placeholder.svg';
+  } else if (currentBackdropRetry >= 3) {
+    backdropSrc = '/poster-placeholder.svg';
+  } else if (currentBackdropRetry > 0) {
+    const separator = originalBackdropUrl.includes('?') ? '&' : '?';
+    backdropSrc = `${originalBackdropUrl}${separator}retry=${currentBackdropRetry}`;
+  } else {
+    backdropSrc = originalBackdropUrl;
+  }
 
   const handlePosterError = () => {
-    if (movie.posterUrl && posterRetryRef.current < 3) {
-      posterRetryRef.current += 1;
-      const separator = movie.posterUrl.includes('?') ? '&' : '?';
-      const retryUrl = `${movie.posterUrl}${separator}retry=${posterRetryRef.current}`;
-      console.log(`Poster failed to load for "${movie.title}". Retrying (${posterRetryRef.current}/3): ${retryUrl}`);
+    if (movie.posterUrl && currentPosterRetry < 3) {
+      console.log(`Poster failed to load for "${movie.title}". Retrying (${currentPosterRetry + 1}/3)`);
       setTimeout(() => {
-        setPosterSrc(retryUrl);
+        setPosterRetryCount((prev) => ({
+          ...prev,
+          [movie.id]: currentPosterRetry + 1,
+        }));
       }, 600);
     } else {
-      setPosterSrc('/poster-placeholder.svg');
+      setPosterRetryCount((prev) => ({
+        ...prev,
+        [movie.id]: 3,
+      }));
     }
   };
 
   const handleBackdropError = () => {
-    const originalUrl = movie.backdropUrl || movie.posterUrl;
-    if (originalUrl && backdropRetryRef.current < 3) {
-      backdropRetryRef.current += 1;
-      const separator = originalUrl.includes('?') ? '&' : '?';
-      const retryUrl = `${originalUrl}${separator}retry=${backdropRetryRef.current}`;
-      console.log(`Backdrop failed to load for "${movie.title}". Retrying (${backdropRetryRef.current}/3): ${retryUrl}`);
+    if (originalBackdropUrl && currentBackdropRetry < 3) {
+      console.log(`Backdrop failed to load for "${movie.title}". Retrying (${currentBackdropRetry + 1}/3)`);
       setTimeout(() => {
-        setBackdropSrc(retryUrl);
+        setBackdropRetryCount((prev) => ({
+          ...prev,
+          [movie.id]: currentBackdropRetry + 1,
+        }));
       }, 600);
     } else {
-      setBackdropSrc('/poster-placeholder.svg');
+      setBackdropRetryCount((prev) => ({
+        ...prev,
+        [movie.id]: 3,
+      }));
     }
   };
 

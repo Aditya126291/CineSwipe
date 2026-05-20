@@ -8,6 +8,9 @@ export async function POST(request: Request) {
     const key_secret = process.env.RAZORPAY_KEY_SECRET;
 
     if (!key_secret) {
+      if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json({ success: false, error: 'Razorpay secret missing in production' }, { status: 500 });
+      }
       // Direct sandbox validation
       return NextResponse.json({ success: true, message: 'Simulated Sandbox Payment Success!' });
     }

@@ -13,7 +13,6 @@ import GenreFilter from '@/components/GenreFilter';
 import SwipeHistory from '@/components/SwipeHistory';
 import SwipeDeck from '@/components/SwipeDeck';
 import UpgradePrompt from '@/components/UpgradePrompt';
-import MatchModal from '@/components/MatchModal';
 import SkeletonCard from '@/components/SkeletonCard';
 import AdBanner from '@/components/AdBanner';
 import type { ContentItem } from '@/lib/tmdb/types';
@@ -23,8 +22,6 @@ export default function SoloSwipePage() {
   const [selectedGenreId, setSelectedGenreId] = useState<number | undefined>(undefined);
   const [historyOpen, setHistoryOpen] = useState<boolean>(false);
   const [upgradeOpen, setUpgradeOpen] = useState<boolean>(false);
-  const [matchOpen, setMatchOpen] = useState<boolean>(false);
-  const [matchedMovie, setMatchedMovie] = useState<ContentItem | null>(null);
 
   // Core Hooks
   const { isPremium, swipesLeft, maxDailySwipes, incrementSwipeCount, triggerRazorpayCheckout } = usePremium();
@@ -170,16 +167,6 @@ export default function SoloSwipePage() {
         disliked={disliked}
         superLiked={superLiked}
         undo={undo}
-        isPremium={isPremium}
-        onUpgradePrompt={() => setUpgradeOpen(true)}
-      />
-
-      {/* Full Celebration Confetti match modal */}
-      <MatchModal
-        isOpen={matchOpen}
-        onClose={() => setMatchOpen(false)}
-        movie={matchedMovie}
-        matchReason="Personal Match!"
         isPremium={isPremium}
         onUpgradePrompt={() => setUpgradeOpen(true)}
       />
