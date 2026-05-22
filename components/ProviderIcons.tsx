@@ -1,5 +1,5 @@
 'use client';
-
+import { useState } from 'react';
 import { resolveGeoLink, getClientRegion } from '@/lib/catalog/providers-geo';
 
 interface Provider {
@@ -16,6 +16,7 @@ interface ProviderIconsProps {
 
 export default function ProviderIcons({ providers, movieId, movieTitle }: ProviderIconsProps) {
   const region = getClientRegion();
+  const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({});
 
   // Dynamic regional provider adjustment at runtime
   const activeProviders = (providers && providers.length > 0 ? providers : [
@@ -66,16 +67,24 @@ export default function ProviderIcons({ providers, movieId, movieTitle }: Provid
 
   // Premium hand-styled vector SVG icons or HTML layouts
   const getProviderLogo = (name: string, logoUrl?: string) => {
+    const normName = name.toLowerCase();
+
     // If the database has a valid public logoUrl (hosted on Supabase or TMDB), render it directly!
-    if (logoUrl && logoUrl.startsWith('http')) {
+    // BUT only if it hasn't failed to load in this session!
+    if (logoUrl && logoUrl.startsWith('http') && !failedLogos[normName]) {
       return (
         <div className="w-8 h-8 rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950 flex items-center justify-center shadow-md hover:border-zinc-700 transition-colors duration-200">
-          <img src={logoUrl} alt={name} className="w-7 h-7 object-contain rounded-md" />
+          <img 
+            src={logoUrl} 
+            alt={name} 
+            className="w-7 h-7 object-contain rounded-md" 
+            onError={() => {
+              setFailedLogos(prev => ({ ...prev, [normName]: true }));
+            }}
+          />
         </div>
       );
     }
-
-    const normName = name.toLowerCase();
 
     // High fidelity fallback badges
     switch (normName) {

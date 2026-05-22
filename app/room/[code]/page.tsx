@@ -40,7 +40,7 @@ export default function RoomPage({ params }: PageProps) {
 
   // Core Hooks
   const { isPremium, triggerRazorpayCheckout } = usePremium();
-  const { movies, loading } = useMovies('all', undefined, roomCode); // Pass roomCode as shuffleSeed for identical deck ordering
+  const { movies, loading, loadMore, hasMore } = useMovies('all', undefined, roomCode); // Pass roomCode as shuffleSeed for identical deck ordering
 
   const handleMatchTrigger = (movie: ContentItem, reason?: string) => {
     setMatchedMovie(movie);
@@ -104,6 +104,14 @@ export default function RoomPage({ params }: PageProps) {
   };
 
   const [moviesMatchedCount, setMoviesMatchedCount] = useState<number>(0);
+
+  // Automatically trigger loadMore when approaching the end of the loaded movies list (deck)
+  useEffect(() => {
+    if (movies.length === 0) return;
+    if (hasMore && moviesMatchedCount >= movies.length - 5 && !loading) {
+      loadMore();
+    }
+  }, [moviesMatchedCount, movies.length, hasMore, loading, loadMore]);
 
   if (roomLoading) {
     return (

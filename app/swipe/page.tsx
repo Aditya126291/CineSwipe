@@ -24,7 +24,7 @@ export default function SoloSwipePage() {
 
   // Core Hooks
   const { isPremium, swipesLeft, maxDailySwipes, incrementSwipeCount, triggerRazorpayCheckout } = usePremium();
-  const { movies, genres, loading, loadMore, hasMore, catalogSource } = useMovies(contentType, selectedGenreId);
+  const { movies, genres, loading, loadMore, hasMore } = useMovies(contentType, selectedGenreId);
 
   const handleLimitExceeded = () => {
     setUpgradeOpen(true);
@@ -59,12 +59,9 @@ export default function SoloSwipePage() {
         }
       }
 
-      // Verify that the user has a preferred genre (not just balanced defaults)
-      const N = Object.keys(weights).length;
-      const defaultWeight = 1.0 / N;
-      if (highestGenreId && highestWeight > defaultWeight) {
-        setSelectedGenreId(highestGenreId);
-      }
+      // Genre preferences are loaded into weights in localStorage, which will be naturally
+      // bubbled to the top by the recommendation ranker (rankMovies) under 'All Feeds'
+      // without programmatically locking the UI filter pill and exhausting the pool.
     }
   }, []);
 
@@ -203,13 +200,8 @@ export default function SoloSwipePage() {
         {/* Dynamic limits & history drawer toggles */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-          <SwipeCounter swipesLeft={swipesLeft} maxSwipes={maxDailySwipes} isPremium={isPremium} />
-          {catalogSource !== 'unknown' && (
-            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-              Feed: {catalogSource}
-            </span>
-          )}
-        </div>
+            <SwipeCounter swipesLeft={swipesLeft} maxSwipes={maxDailySwipes} isPremium={isPremium} />
+          </div>
           
           <button
             onClick={() => setHistoryOpen(true)}

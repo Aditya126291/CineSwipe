@@ -43,13 +43,13 @@
 
 @layer base {
   :root {
-    --background: 240 20% 97%;
-    --foreground: 240 20% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 20% 10%;
-    --muted: 240 10% 92%;
-    --muted-foreground: 240 10% 45%;
-    --border: 240 10% 88%;
+    --background: 36 28% 97%; /* Warm alabaster #fbfaf7 */
+    --foreground: 240 10% 12%; /* Elegant deep warm charcoal #1c1c22 */
+    --card: 36 30% 99%; /* Soft milk white #fffdfc */
+    --card-foreground: 240 10% 12%;
+    --muted: 36 15% 93%; /* Soft sand #f2eee6 */
+    --muted-foreground: 240 6% 45%; /* Warm muted grey */
+    --border: 36 12% 89%; /* Soft warm organic border #e4dfd7 */
     --accent: 263 70% 58%;
     --accent-foreground: 0 0% 100%;
   }
@@ -353,4 +353,144 @@
   background-image: linear-gradient(to right, #9061f9, #ff5c8a);
   box-shadow: 0 0 12px rgba(124, 58, 237, 0.6);
   height: 6px;
+}
+
+/* ==========================================================================
+   PREMIUM REFINE & BLEND LIGHT MODE SYSTEM
+   Soft Warm Alabaster surfaces, faint translucent lines, warm atmospheric glows
+   ========================================================================== */
+
+html:not(.dark) {
+  /* Light theme variables already defined in :root above */
+}
+
+/* Soften all background fills in light mode */
+html:not(.dark) .bg-zinc-50 {
+  background-color: hsl(var(--background)) !important;
+}
+
+html:not(.dark) .bg-white {
+  background-color: #fffdfb !important;
+}
+
+/* Redefine interactive buttons to have premium depth in light mode */
+html:not(.dark) button.bg-white:not(:hover),
+html:not(.dark) a.bg-white:not(:hover) {
+  background-color: #fffdfb !important;
+  border-color: rgba(185, 180, 165, 0.25) !important;
+}
+
+/* Soften borders globally - no more stark sharp dividers */
+html:not(.dark) .border-zinc-200,
+html:not(.dark) .border-zinc-150,
+html:not(.dark) .border-zinc-300,
+html:not(.dark) .border-zinc-200\/50,
+html:not(.dark) .border {
+  border-color: rgba(185, 180, 165, 0.25) !important;
+}
+
+html:not(.dark) .border-t {
+  border-color: rgba(185, 180, 165, 0.18) !important;
+}
+
+html:not(.dark) .border-b {
+  border-color: rgba(185, 180, 165, 0.18) !important;
+}
+
+/* Replace sharp dark shadows with wide, organic, warm olive-tinted drop-shadows */
+html:not(.dark) .shadow-2xl {
+  box-shadow: 
+    0 25px 60px -15px rgba(125, 115, 95, 0.07),
+    0 0 40px rgba(124, 58, 237, 0.03) !important;
+}
+
+html:not(.dark) .shadow-xl {
+  box-shadow: 
+    0 15px 40px -10px rgba(125, 115, 95, 0.05),
+    0 0 30px rgba(124, 58, 237, 0.02) !important;
+}
+
+html:not(.dark) .shadow-md {
+  box-shadow: 
+    0 6px 20px -3px rgba(125, 115, 95, 0.04) !important;
+}
+
+/* Redefine Glassmorphism surface systems in light mode */
+html:not(.dark) .glass-light {
+  background: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 12px 32px rgba(125, 115, 95, 0.04) !important;
+}
+
+/* Redesign glass-cinema for light mode (e.g. no more movies deck state) */
+html:not(.dark) .glass-cinema {
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(185, 180, 165, 0.22) !important;
+  box-shadow: 
+    0 15px 45px rgba(125, 115, 95, 0.06),
+    inset 0 1px 1px rgba(255, 255, 255, 0.6) !important;
+  color: #1c1c22 !important;
+}
+
+/* Redesign scrollbars for light mode horizontal scroll component */
+html:not(.dark) .cinema-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(125, 115, 95, 0.15);
+  border: 1px solid transparent;
+}
+
+html:not(.dark) .cinema-scrollbar:hover::-webkit-scrollbar-thumb,
+html:not(.dark) .cinema-scrollbar:focus-within::-webkit-scrollbar-thumb {
+  background-image: linear-gradient(to right, #7c3aed, #ff3366);
+  box-shadow: 0 0 8px rgba(124, 58, 237, 0.2);
+}
+
+/* Redesign the genre filter tags inside scroll lists in light mode */
+html:not(.dark) .cinema-scrollbar button {
+  background-color: rgba(28, 25, 23, 0.035) !important;
+  border-color: rgba(185, 180, 165, 0.22) !important;
+  color: #4b5563 !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
+
+html:not(.dark) .cinema-scrollbar button:hover {
+  background-color: rgba(28, 25, 23, 0.06) !important;
+  border-color: rgba(185, 180, 165, 0.35) !important;
+  color: #111116 !important;
+}
+
+/* Preserve active items in Genre list inside light mode */
+html:not(.dark) .cinema-scrollbar button.bg-gradient-to-r,
+html:not(.dark) .cinema-scrollbar button[class*="from-violet-600"] {
+  background-image: linear-gradient(to right, #7c3aed, #ff3366) !important;
+  border-color: rgba(124, 58, 237, 0.2) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 20px -4px rgba(124, 58, 237, 0.25) !important;
+}
+
+/* Refine standard feed selection controls to look extremely premium in light mode */
+html:not(.dark) .bg-zinc-100 {
+  background-color: rgba(28, 25, 23, 0.04) !important;
+  border-color: rgba(185, 180, 165, 0.25) !important;
+}
+
+html:not(.dark) .bg-zinc-100 button {
+  color: #5c5f6e !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
+
+html:not(.dark) .bg-zinc-100 button.bg-violet-600 {
+  background-color: #7c3aed !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px -2px rgba(124, 58, 237, 0.22) !important;
+}
+
+/* Upgrade features: gold upgrade buttons and lock elements in light mode */
+html:not(.dark) button.bg-gradient-to-r[class*="from-amber"] {
+  box-shadow: 0 6px 16px -2px rgba(245, 158, 11, 0.22) !important;
 }

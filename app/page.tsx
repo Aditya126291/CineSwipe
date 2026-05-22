@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Film, Sparkles, Users, User, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
+import { Film, Sparkles, Users, User, ArrowRight, ShieldCheck } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import Link from 'next/link';
 import { hasSupabase, supabase } from '@/lib/supabase/client';
@@ -231,12 +231,8 @@ export default function Home() {
           © {new Date().getFullYear()} CineSwipe App. Made for Popcorn Lovers.
         </span>
         <div className="flex items-center gap-4 text-[10px] text-zinc-400 dark:text-zinc-500 font-black uppercase tracking-wider">
-          <span className="flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-emerald-500" /> SSL SECURE BY RAZORPAY
-          </span>
-          <span className="text-zinc-300 dark:text-zinc-800">•</span>
-          <span className="flex items-center gap-1.5">
-            <Zap className="w-4 h-4 text-amber-500 fill-amber-500" /> POWERED BY TMDB
+          <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-500">
+            <ShieldCheck className="w-4 h-4 text-emerald-500" /> 256-BIT SSL SECURE
           </span>
         </div>
       </footer>

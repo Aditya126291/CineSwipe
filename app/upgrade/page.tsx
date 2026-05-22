@@ -139,7 +139,7 @@ export default function UpgradePage() {
                   <div className="w-full space-y-3.5 mt-8 py-6 border-y border-white/5 text-[10px] text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wider">
                     <div className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-emerald-500 shrink-0" />
-                      Secure payment verified by Razorpay
+                      Secure payment & instant activation
                     </div>
                     <div className="flex items-center gap-2">
                       <Check className="w-4 h-4 text-emerald-500 shrink-0" />
@@ -174,7 +174,7 @@ export default function UpgradePage() {
 
       {/* Footer metadata info */}
       <footer className="py-8 text-center text-[9px] text-zinc-500 dark:text-zinc-500 uppercase font-black tracking-widest relative z-10">
-        🛡️ Secure payment powered by Razorpay. CineSwipe will never store card credentials.
+        🛡️ 256-Bit SSL Secure Checkout. CineSwipe does not store your card details.
       </footer>
     </div>
   );

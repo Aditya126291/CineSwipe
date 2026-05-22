@@ -106,7 +106,7 @@ export function useMovies(
       setError(null);
 
       try {
-        let finalItems: ContentItem[] = [];
+        const finalItems: ContentItem[] = [];
         let currentPage = pageNum;
         let consecutiveEmptyAttempts = 0;
 
@@ -115,7 +115,7 @@ export function useMovies(
         while (finalItems.length < CATALOG_BATCH_SIZE && consecutiveEmptyAttempts < 5) {
           const url = `/api/catalog/feed?mediaType=${mediaType}&page=${currentPage}${
             genreId ? `&genreId=${genreId}` : ''
-          }`;
+          }${shuffleSeed ? `&seed=${shuffleSeed}` : ''}`;
 
           const res = await fetch(url);
           if (!res.ok) {
