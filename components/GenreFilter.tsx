@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import type { Genre } from '@/lib/types/content';
 import { Lock, Sparkles } from 'lucide-react';
 
@@ -21,6 +21,24 @@ export default function GenreFilter({
 }: GenreFilterProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Connect mouse wheel scroll-to-horizontal movement
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.deltaY !== 0) {
+        e.preventDefault();
+        container.scrollLeft += e.deltaY * 1.75; // faster scrolling speed adjustment
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+    };
+  }, []);
+
   const handleGenreClick = (genreId?: number, idx?: number) => {
     if (!isPremium && idx && idx >= 3) {
       onUpgradePrompt();
@@ -34,11 +52,11 @@ export default function GenreFilter({
       {/* Horizontally scrolling pill filter list */}
       <div
         ref={containerRef}
-        className="flex items-center gap-2 overflow-x-auto hide-scrollbar scroll-smooth px-1 py-1"
+        className="flex items-center gap-2 overflow-x-auto cinema-scrollbar scroll-smooth px-1 py-1 pb-3"
       >
         <button
           onClick={() => handleGenreClick(undefined)}
-          className={`px-4 py-2 rounded-full text-xs font-black tracking-wide uppercase transition-all duration-300 border whitespace-nowrap cursor-pointer hover:scale-105 active:scale-95 ${
+          className={`shrink-0 px-4 py-2 rounded-full text-xs font-black tracking-wide uppercase transition-all duration-300 border whitespace-nowrap cursor-pointer hover:scale-105 active:scale-95 ${
             selectedGenreId === undefined
               ? 'bg-gradient-to-r from-violet-600 to-coral-500 border-violet-500/30 text-white shadow-lg shadow-violet-500/20 glow-violet'
               : 'bg-white/5 dark:bg-navy-950/40 border-zinc-200/50 dark:border-white/5 text-zinc-700 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:border-zinc-300 dark:hover:border-white/15 backdrop-blur-md'
@@ -55,7 +73,7 @@ export default function GenreFilter({
             <button
               key={g.id}
               onClick={() => handleGenreClick(g.id, idx)}
-              className={`px-4 py-2 rounded-full text-xs font-black tracking-wide uppercase transition-all duration-300 border flex items-center gap-1.5 whitespace-nowrap cursor-pointer hover:scale-105 active:scale-95 ${
+              className={`shrink-0 px-4 py-2 rounded-full text-xs font-black tracking-wide uppercase transition-all duration-300 border flex items-center gap-1.5 whitespace-nowrap cursor-pointer hover:scale-105 active:scale-95 ${
                 isSelected
                   ? 'bg-gradient-to-r from-violet-600 to-coral-500 border-violet-500/30 text-white shadow-lg shadow-violet-500/20 glow-violet'
                   : 'bg-white/5 dark:bg-navy-950/40 border-zinc-200/50 dark:border-white/5 text-zinc-700 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:border-zinc-300 dark:hover:border-white/15 backdrop-blur-md'
@@ -74,7 +92,7 @@ export default function GenreFilter({
         {!isPremium && (
           <button
             onClick={onUpgradePrompt}
-            className="px-4 py-2 rounded-full text-xs font-black tracking-wide uppercase bg-gradient-to-r from-amber-500/20 to-amber-600/35 border border-amber-500/40 text-amber-400 flex items-center gap-1.5 whitespace-nowrap hover:scale-105 active:scale-95 transition-all duration-300 shadow-md shadow-amber-500/10 cursor-pointer animate-pulse-glow"
+            className="shrink-0 px-4 py-2 rounded-full text-xs font-black tracking-wide uppercase bg-gradient-to-r from-amber-500/20 to-amber-600/35 border border-amber-500/40 text-amber-400 flex items-center gap-1.5 whitespace-nowrap hover:scale-105 active:scale-95 transition-all duration-300 shadow-md shadow-amber-500/10 cursor-pointer animate-pulse-glow"
           >
             <Sparkles className="w-3.5 h-3.5 fill-amber-500/30 text-amber-400" /> Unlock More
           </button>

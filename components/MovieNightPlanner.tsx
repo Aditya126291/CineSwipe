@@ -162,7 +162,7 @@ export default function MovieNightPlanner({
                     </div>
                     {/* Streamers availability */}
                     <div className="mt-2 flex items-center gap-1">
-                      <ProviderIcons providers={item.providers} />
+                      <ProviderIcons providers={item.providers} movieId={item.id} movieTitle={item.title} />
                     </div>
                   </div>
                 </div>

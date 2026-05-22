@@ -142,7 +142,7 @@ export default function MatchModal({
               <div className="w-full py-4 border-y border-white/10 mb-6 flex flex-col items-center gap-2">
                 <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Available to Stream On</span>
                 <div className="flex justify-center text-center">
-                  <ProviderIcons providers={movie.providers} />
+                  <ProviderIcons providers={movie.providers} movieId={movie.id} movieTitle={movie.title} />
                 </div>
               </div>
 

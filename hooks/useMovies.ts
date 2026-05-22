@@ -1,16 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase, hasSupabase } from '@/lib/supabase/client';
 import { initializeWeights, rankMovies } from '@/lib/recommendations';
-import { mapCatalogRowToContentItem } from '@/lib/catalog/map-row';
-import { preloadPosterImages } from '@/lib/catalog/preload';
 import type { ContentItem, Genre } from '@/lib/types/content';
-// Removed unused TMDB imports and mock data
 
 export const CATALOG_BATCH_SIZE = 20;
 
-export type CatalogSource = 'supabase' | 'unknown';
+export type CatalogSource = 'supabase' | 'tvmaze' | 'unknown';
 
 export const ALL_GENRES: Genre[] = [
   { id: 28, name: 'Action' }, { id: 35, name: 'Comedy' }, { id: 18, name: 'Drama' },
@@ -27,9 +23,7 @@ export function seededRandom(seed: string) {
   }
   return function () {
     h = Math.imul(h ^ (h >>> 16), 2246822507);
-    h = Math.imul(h ^ (h >>> 13), 3266489909);
-    return ((h ^= h >>> 16) >>> 0) / 4294967296;
-  };
+  }
 }
 
 export function useMovies(
@@ -46,6 +40,9 @@ export function useMovies(
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [catalogSource, setCatalogSource] = useState<CatalogSource>('unknown');
   const loadingMoreRef = useRef(false);
+
+  // In-memory set to prevent ANY repeated cards inside the active section
+  const shownMovieIdsRef = useRef<Set<number>>(new Set());
 
   const rankFetchedMovies = useCallback((items: ContentItem[]) => {
     if (shuffleSeed) return items;
@@ -64,12 +61,22 @@ export function useMovies(
   }, [shuffleSeed]);
 
   const finalizeBatch = useCallback(
-    async (items: ContentItem[], source: CatalogSource, clear: boolean, pageNum: number) => {
+    async (items: ContentItem[], clear: boolean, pageNum: number) => {
       const ranked = rankFetchedMovies(items);
 
       let output = ranked;
       if (shuffleSeed) {
-        const rng = seededRandom(shuffleSeed + '_' + pageNum);
+        let h = 0xdeadbeef;
+        for (let i = 0; i < shuffleSeed.length; i++) {
+          h = Math.imul(h ^ shuffleSeed.charCodeAt(i), 2654435761);
+        }
+        // Custom seeded random since randomizer is simple
+        const rng = () => {
+          h = Math.imul(h ^ (h >>> 16), 2246822507);
+          h = Math.imul(h ^ (h >>> 13), 3266489909);
+          return ((h ^= h >>> 16) >>> 0) / 4294967296;
+        };
+
         output = [...ranked];
         for (let i = output.length - 1; i > 0; i--) {
           const j = Math.floor(rng() * (i + 1));
@@ -77,9 +84,16 @@ export function useMovies(
         }
       }
 
+      // Add all shown IDs to our seen set to block repeats
+      items.forEach((item) => shownMovieIdsRef.current.add(item.id));
+
+      // Classify the catalog source based on IDs
+      const hasTvmaze = items.some(item => item.id >= 2000000);
+      const source: CatalogSource = hasTvmaze ? 'tvmaze' : 'supabase';
+
       setCatalogSource(source);
       setMovies((prev) => (clear ? output : [...prev, ...output]));
-      setHasMore(output.length >= CATALOG_BATCH_SIZE);
+      setHasMore(items.length >= CATALOG_BATCH_SIZE);
     },
     [rankFetchedMovies, shuffleSeed]
   );
@@ -93,44 +107,49 @@ export function useMovies(
 
       try {
         let finalItems: ContentItem[] = [];
+        let currentPage = pageNum;
+        let consecutiveEmptyAttempts = 0;
 
-        if (hasSupabase()) {
-          try {
-            // Standard pagination to ensure no repeats
-            const from = (pageNum - 1) * CATALOG_BATCH_SIZE;
-            const to = from + CATALOG_BATCH_SIZE - 1;
+        // Auto-paginate on the server in a loop if the returned batch contains 
+        // items we've already shown in this section. This keeps the feed truly continuous!
+        while (finalItems.length < CATALOG_BATCH_SIZE && consecutiveEmptyAttempts < 5) {
+          const url = `/api/catalog/feed?mediaType=${mediaType}&page=${currentPage}${
+            genreId ? `&genreId=${genreId}` : ''
+          }`;
 
-            let query = supabase!.from('movies_catalog').select('*');
-            if (mediaType !== 'all') {
-              query = query.eq('media_type', mediaType);
-            }
-            if (genreId) {
-              query = query.contains('genres', [genreId]);
-            }
-            // Order by ID to ensure consistent pagination before ranking locally
-            query = query.order('id', { ascending: true });
-
-            const { data: dbData, error: dbErr } = await query.range(from, to);
-
-            if (dbErr) throw dbErr;
-
-            if (dbData && dbData.length > 0) {
-              finalItems = dbData.map((row) => mapCatalogRowToContentItem(row as Record<string, unknown>));
-            }
-          } catch (supaErr) {
-            console.error('Supabase fetching error:', supaErr);
-            setError('Could not load titles from catalog. Please try again.');
+          const res = await fetch(url);
+          if (!res.ok) {
+            throw new Error(`API returned HTTP ${res.status}`);
           }
-        } else {
-          setError('Supabase is not configured. Catalog is offline.');
+
+          const data = await res.json();
+          if (!data.results || data.results.length === 0) {
+            consecutiveEmptyAttempts++;
+            currentPage++;
+            if (!data.hasMore) break;
+            continue;
+          }
+
+          // Filter out items that are already in shownMovieIdsRef
+          const unseen = data.results.filter(
+            (item: ContentItem) =>
+              !shownMovieIdsRef.current.has(item.id) &&
+              !finalItems.some((f) => f.id === item.id)
+          );
+
+          finalItems.push(...unseen);
+
+          if (!data.hasMore) break;
+          currentPage++;
         }
 
-        await finalizeBatch(finalItems, hasSupabase() ? 'supabase' : 'unknown', clear, pageNum);
-        setHasMore(finalItems.length > 0);
+        await finalizeBatch(finalItems, clear, pageNum);
       } catch (err: unknown) {
         console.error('Failed to fetch movies:', err);
-        setError('Could not load titles. Please check your internet connection and try again.');
-        setMovies([]);
+        setError('Could not load titles. Please check your connection and try again.');
+        if (clear) {
+          setMovies([]);
+        }
         setHasMore(false);
       } finally {
         setLoading(false);
@@ -142,6 +161,8 @@ export function useMovies(
 
   useEffect(() => {
     const timer = setTimeout(() => {
+      // Clear the seen set strictly when changing sections, matching Instagram Reels exactly!
+      shownMovieIdsRef.current.clear();
       setPage(1);
       setHasMore(true);
       loadMovies(1, true);
@@ -149,24 +170,13 @@ export function useMovies(
     return () => clearTimeout(timer);
   }, [mediaType, genreId, shuffleSeed, loadMovies]);
 
-  useEffect(() => {
-    if (prefetchFromIndex == null || movies.length === 0) return;
-    preloadPosterImages(movies, prefetchFromIndex + 1, 4);
-    if (hasMore && prefetchFromIndex >= movies.length - 5 && !loading) {
-      const nextPage = page + 1;
-      setTimeout(() => {
-        setPage(nextPage);
-        loadMovies(nextPage, false);
-      }, 0);
-    }
-  }, [prefetchFromIndex, movies, hasMore, loading, page, loadMovies]);
-
-  const loadMore = () => {
+  // Load more when reaching near the end of the loaded stack
+  const loadMore = useCallback(() => {
     if (!hasMore || loading) return;
     const nextPage = page + 1;
     setPage(nextPage);
     loadMovies(nextPage, false);
-  };
+  }, [page, hasMore, loading, loadMovies]);
 
   return { movies, setMovies, genres, loading, error, loadMore, hasMore, catalogSource, page };
 }

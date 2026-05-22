@@ -15,7 +15,16 @@ interface MovieCardProps {
 }
 
 export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgradePrompt }: MovieCardProps) {
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [prevIsFlipped, setPrevIsFlipped] = useState<boolean>(isFlipped);
+  const [isStopped, setIsStopped] = useState<boolean>(false);
+
+  // Synchronously adjust state when flip status changes during rendering
+  if (isFlipped !== prevIsFlipped) {
+    setPrevIsFlipped(isFlipped);
+    setIsStopped(false);
+  }
+
+  const isPlaying = isFlipped && !isStopped;
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const [posterRetryCount, setPosterRetryCount] = useState<Record<number, number>>({});
@@ -86,15 +95,7 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
     }, 0);
   }, [movie.id]);
 
-  // Stop video when card flips back or unmounts
-  useEffect(() => {
-    if (!isFlipped && isPlaying) {
-      const timer = setTimeout(() => {
-        setIsPlaying(false);
-      }, 0);
-      return () => clearTimeout(timer);
-    }
-  }, [isFlipped, isPlaying]);
+
 
   const handleCardClick = (e: React.MouseEvent) => {
     // Avoid flipping when clicking inside interactive items
@@ -112,12 +113,12 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
 
   const handleTrailerPlay = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsPlaying(true);
+    setIsStopped(false);
   };
 
   const handleTrailerStop = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsPlaying(false);
+    setIsStopped(true);
   };
 
   const getYoutubeEmbedUrl = (key?: string) => {
@@ -279,7 +280,7 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
 
               {/* Streaming Platforms availability grid */}
               <div className="no-flip bg-navy-900/50 p-4 rounded-2xl border border-white/5 shadow-inner">
-                <ProviderIcons providers={movie.providers} />
+                <ProviderIcons providers={movie.providers} movieId={movie.id} movieTitle={movie.title} />
               </div>
             </div>
 

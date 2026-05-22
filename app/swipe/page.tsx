@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { preloadPosterImages } from '@/lib/catalog/preload';
-import { updateFeedWeights, penalizeFeedWeights, initializeWeights } from '@/lib/recommendations';
+import { updateFeedWeightsMultiple, penalizeFeedWeightsMultiple, initializeWeights } from '@/lib/recommendations';
 import { ArrowLeft, History } from 'lucide-react';
 import Link from 'next/link';
 import { useMovies } from '@/hooks/useMovies';
@@ -30,14 +30,41 @@ export default function SoloSwipePage() {
     setUpgradeOpen(true);
   };
 
-  // Initialize weights in localStorage on mount if not exists
+  // Initialize weights in localStorage on mount and dynamically select the user's highest weighted starting genre (quota)
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      let weights = initializeWeights();
       const stored = localStorage.getItem('cineswipe-genre-weights');
       if (!stored) {
-        localStorage.setItem('cineswipe-genre-weights', JSON.stringify(initializeWeights()));
+        localStorage.setItem('cineswipe-genre-weights', JSON.stringify(weights));
+      } else {
+        try {
+          weights = JSON.parse(stored);
+        } catch (e) {
+          console.error('Failed to parse weights', e);
+        }
       }
       localStorage.removeItem('cineswipe-genre-weights-history');
+
+      // Find the genre with the highest weight (quota)
+      let highestGenreId: number | undefined = undefined;
+      let highestWeight = -1;
+
+      for (const [gidStr, weight] of Object.entries(weights)) {
+        const gid = Number(gidStr);
+        const w = Number(weight);
+        if (w > highestWeight) {
+          highestWeight = w;
+          highestGenreId = gid;
+        }
+      }
+
+      // Verify that the user has a preferred genre (not just balanced defaults)
+      const N = Object.keys(weights).length;
+      const defaultWeight = 1.0 / N;
+      if (highestGenreId && highestWeight > defaultWeight) {
+        setSelectedGenreId(highestGenreId);
+      }
     }
   }, []);
 
@@ -86,18 +113,18 @@ export default function SoloSwipePage() {
       const swipedMovie = movies.find((m) => m.id === movieId);
 
       if (direction === 'like' || direction === 'superlike') {
-        const primaryGenre = swipedMovie?.genreIds?.[0];
-        if (primaryGenre) {
-          const newState = updateFeedWeights({ weights: currentWeights, lastLikedGenre }, primaryGenre);
+        const genres = swipedMovie?.genreIds || [];
+        if (genres.length > 0) {
+          const newState = updateFeedWeightsMultiple({ weights: currentWeights, lastLikedGenre }, genres);
           localStorage.setItem('cineswipe-genre-weights', JSON.stringify(newState.weights));
           if (newState.lastLikedGenre !== null) {
             localStorage.setItem('cineswipe-last-liked-genre', newState.lastLikedGenre.toString());
           }
         }
       } else if (direction === 'dislike') {
-        const primaryGenre = swipedMovie?.genreIds?.[0];
-        if (primaryGenre) {
-          const newState = penalizeFeedWeights({ weights: currentWeights, lastLikedGenre }, primaryGenre);
+        const genres = swipedMovie?.genreIds || [];
+        if (genres.length > 0) {
+          const newState = penalizeFeedWeightsMultiple({ weights: currentWeights, lastLikedGenre }, genres);
           localStorage.setItem('cineswipe-genre-weights', JSON.stringify(newState.weights));
         }
       }
