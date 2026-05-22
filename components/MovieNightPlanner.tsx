@@ -52,7 +52,7 @@ export default function MovieNightPlanner({
   const hiddenCount = rankedMatches.length - displayList.length;
 
   return (
-    <div className="w-full max-w-md p-7 md:p-8 rounded-[32px] border border-white/10 bg-gradient-to-b from-navy-900/90 to-navy-950/95 backdrop-blur-2xl shadow-2xl flex flex-col gap-6 select-none animate-scale-in relative overflow-hidden">
+    <div className="w-full max-w-md p-7 md:p-8 rounded-[32px] border border-zinc-200 dark:border-white/10 bg-white/75 dark:bg-gradient-to-b dark:from-navy-900/90 dark:to-navy-950/95 backdrop-blur-2xl shadow-2xl flex flex-col gap-6 select-none animate-scale-in relative overflow-hidden glass-cinema">
       {/* Decorative background glows */}
       <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-amber-500/10 blur-[80px] pointer-events-none" />
       <div className="absolute -bottom-24 -left-24 w-48 h-48 rounded-full bg-violet-600/10 blur-[80px] pointer-events-none" />
@@ -65,13 +65,13 @@ export default function MovieNightPlanner({
         <h2 className="text-2xl font-black tracking-tight text-zinc-950 dark:text-white">Red Carpet Selections</h2>
         
         {/* UX explanation ranking card */}
-        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 max-w-sm leading-normal mt-1 bg-black/20 dark:bg-navy-950/60 p-3 rounded-2xl border border-white/5">
+        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 max-w-sm leading-normal mt-1 bg-zinc-100/50 dark:bg-navy-950/60 p-3 rounded-2xl border border-zinc-200/50 dark:border-white/5">
           ✨ <strong>Engagement Rank:</strong> Matches are ordered based on how quickly your party made a decision, giving superlikes maximum weight.
         </p>
       </div>
 
       {/* Media filter tabs */}
-      <div className="flex bg-black/20 dark:bg-navy-950/60 p-1.5 rounded-2xl border border-white/5 text-[10px] font-black uppercase tracking-wider relative z-10">
+      <div className="flex bg-zinc-100/50 dark:bg-navy-950/60 p-1.5 rounded-2xl border border-zinc-200/50 dark:border-white/5 text-[10px] font-black uppercase tracking-wider relative z-10">
         <button
           onClick={() => setContentType('all')}
           className={`flex-1 py-2 text-center rounded-xl transition-all duration-300 cursor-pointer ${
@@ -107,7 +107,7 @@ export default function MovieNightPlanner({
       {/* Leaderboard list */}
       <div className="space-y-4 relative z-10">
         {filteredMatches.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-8 text-center text-zinc-400 gap-2.5 border border-dashed border-white/10 rounded-2xl bg-black/10 dark:bg-navy-950/20">
+          <div className="flex flex-col items-center justify-center p-8 text-center text-zinc-400 gap-2.5 border border-dashed border-zinc-200 dark:border-white/10 rounded-2xl bg-zinc-50/50 dark:bg-navy-950/20">
             <Film className="w-8 h-8 opacity-25" />
             <span className="text-[11px] font-black uppercase tracking-wider">No matches recorded yet.</span>
           </div>
@@ -127,7 +127,7 @@ export default function MovieNightPlanner({
               return (
                 <div
                   key={item.id}
-                  className="flex items-center gap-4 p-3 rounded-2xl bg-white/5 dark:bg-navy-950/40 border border-white/5 hover:bg-white/10 dark:hover:bg-navy-950/80 hover:border-white/10 transition-all duration-300 relative overflow-hidden group"
+                  className="flex items-center gap-4 p-3 rounded-2xl bg-white/40 dark:bg-navy-950/40 border border-zinc-150 dark:border-white/5 hover:bg-white/85 dark:hover:bg-navy-950/80 hover:border-zinc-200 dark:hover:border-white/10 transition-all duration-300 relative overflow-hidden group"
                 >
                   {/* Ranking Medallion Badge */}
                   <div className={`w-9 h-9 rounded-full font-black text-xs shrink-0 flex items-center justify-center border transition-all duration-300 ${medallionClass}`}>

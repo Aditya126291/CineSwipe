@@ -139,8 +139,8 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
         {/* ================= FRONT SIDE ================= */}
         <div className="absolute inset-0 w-full h-full backface-hidden rounded-[30px] border border-zinc-200 dark:border-white/10 bg-white dark:bg-navy-950 flex flex-col overflow-hidden shadow-2xl transition-colors duration-300">
           
-          {/* Movie Poster Background */}
-          <div className="w-full flex-1 bg-zinc-950 relative overflow-hidden group">
+          {/* Movie Poster Background - Soft fallback frame in light mode */}
+          <div className="w-full flex-1 bg-zinc-100 dark:bg-zinc-950 relative overflow-hidden group">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               key={movie.id}
@@ -150,8 +150,8 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
               draggable={false}
               onError={handlePosterError}
             />
-            {/* Dark gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-transparent to-black/35" />
+            {/* Responsive gradient overlay: soft shadow in light mode, cinematic dark in dark mode */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/15 via-transparent to-black/5 dark:from-navy-950 dark:via-transparent dark:to-black/35 transition-all duration-300" />
 
             {/* Poster Info Pills */}
             <div className="absolute top-5 left-5 flex gap-2">

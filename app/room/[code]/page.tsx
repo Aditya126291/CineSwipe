@@ -176,8 +176,13 @@ export default function RoomPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-navy-950 text-zinc-900 dark:text-white flex flex-col justify-between select-none">
+    <div className="min-h-screen bg-zinc-50 dark:bg-navy-950 text-zinc-900 dark:text-white flex flex-col justify-between select-none relative overflow-hidden transition-colors duration-500">
       
+      {/* Background Decorative Glow Mesh */}
+      <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-violet-600/10 dark:bg-violet-600/15 blur-[120px] pointer-events-none animate-pulse-glow" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-coral-500/10 dark:bg-coral-500/15 blur-[120px] pointer-events-none animate-pulse-glow" />
+      <div className="absolute top-[30%] right-[10%] w-[30vw] h-[30vw] rounded-full bg-amber-500/5 dark:bg-amber-500/8 blur-[100px] pointer-events-none" />
+
       {/* Top Navbar Header */}
       <header className="w-full max-w-4xl mx-auto px-6 py-4 flex items-center justify-between border-b border-zinc-200/50 dark:border-zinc-800/30">
         <Link

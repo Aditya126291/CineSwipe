@@ -226,7 +226,7 @@ export default function Home() {
       </main>
 
       {/* Footer bar containing SEO and trust assurances */}
-      <footer className="py-8 border-t border-zinc-200/50 dark:border-white/5 text-center flex flex-col gap-2.5 items-center z-10">
+      <footer className="py-8 border-t border-zinc-200/50 dark:border-white/5 text-center flex flex-col gap-2.5 items-center z-10 font-sans">
         <span className="text-xs text-zinc-400 dark:text-zinc-500 font-medium">
           © {new Date().getFullYear()} CineSwipe App. Made for Popcorn Lovers.
         </span>
@@ -235,6 +235,9 @@ export default function Home() {
             <ShieldCheck className="w-4 h-4 text-emerald-500" /> 256-BIT SSL SECURE
           </span>
         </div>
+        <p className="max-w-md px-6 mt-1 text-[9px] text-zinc-400/60 dark:text-zinc-500/50 leading-normal text-center font-medium">
+          Some movie catalog metadata historically compiled from TMDB. Images are self-hosted or sourced via public-domain archives. CineSwipe operates zero active connections to external TMDB APIs.
+        </p>
       </footer>
     </div>
   );
