@@ -59,12 +59,12 @@ export default function SwipeDeck({
   const y = useMotionValue(0);
   const controls = useAnimation();
 
-  const rotate = useTransform(x, [-200, 200], [-30, 30]);
-  const opacity = useTransform(x, [-150, 0, 150], [0.5, 1, 0.5]);
+  const rotate = useTransform(x, [-200, 200], [-25, 25]);
+  const opacity = useTransform(x, [-150, 0, 150], [0.6, 1, 0.6]);
 
   // Swiping overlay stamp indicators
-  const likeOpacity = useTransform(x, [0, 120], [0, 1]);
-  const nopeOpacity = useTransform(x, [-120, 0], [1, 0]);
+  const likeOpacity = useTransform(x, [0, 100], [0, 1]);
+  const nopeOpacity = useTransform(x, [-100, 0], [1, 0]);
 
   const isFlipped = flippedCardId === activeCard?.id;
 
@@ -133,16 +133,18 @@ export default function SwipeDeck({
 
   if (!activeCard) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-center bg-white dark:bg-navy-950 border border-zinc-200 dark:border-zinc-800 rounded-3xl w-full max-w-sm aspect-[2/3] md:max-w-md shadow-2xl relative">
-        <Sparkles className="w-12 h-12 text-violet-500 mb-4 animate-float" />
-        <h3 className="text-xl font-extrabold text-zinc-950 dark:text-white mb-2">End of the Movie Reel!</h3>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
+      <div className="flex flex-col items-center justify-center p-8 text-center bg-white dark:bg-navy-900/90 border border-zinc-200 dark:border-white/10 rounded-[32px] w-full max-w-sm aspect-[2/3] md:max-w-md shadow-2xl glass-cinema relative">
+        <div className="w-16 h-16 rounded-full bg-violet-500/10 border border-violet-500/30 flex items-center justify-center mb-6 text-violet-500 glow-violet animate-float">
+          <Sparkles className="w-8 h-8 fill-current" />
+        </div>
+        <h3 className="text-2xl font-black text-zinc-950 dark:text-white mb-2 uppercase tracking-tight">End of the Movie Reel!</h3>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-8 max-w-xs leading-relaxed font-medium">
           You have swiped through all available movies. Try changing your genre filters to find more gems.
         </p>
         {historyLength > 0 && (
           <button
             onClick={undo}
-            className="px-6 py-2.5 rounded-full bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm transition-all shadow-md active:scale-95"
+            className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-coral-500 hover:scale-105 active:scale-95 text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg shadow-violet-500/25 cursor-pointer"
             aria-label="Undo last swipe"
             data-testid="swipe-reel-undo-button"
           >
@@ -157,10 +159,11 @@ export default function SwipeDeck({
     <div className="flex flex-col items-center gap-6 w-full max-w-sm md:max-w-md relative select-none">
       {/* Cards Deck Stack layer */}
       <div className="w-full aspect-[2/3] relative flex items-center justify-center">
+        
         {/* Third Card Underneath */}
         {thirdCard && (
           <div
-            className="absolute inset-0 w-full h-full scale-[0.92] translate-y-6 opacity-40 pointer-events-none rounded-3xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-navy-950"
+            className="absolute inset-0 w-full h-full scale-[0.91] translate-y-6 opacity-35 pointer-events-none rounded-[30px] border border-zinc-200 dark:border-white/5 bg-white dark:bg-navy-950 transition-all duration-300"
             style={{ zIndex: 1 }}
           />
         )}
@@ -168,7 +171,7 @@ export default function SwipeDeck({
         {/* Second Card Underneath */}
         {nextCard && (
           <div
-            className="absolute inset-0 w-full h-full scale-[0.96] translate-y-3 opacity-80 pointer-events-none rounded-3xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-navy-950"
+            className="absolute inset-0 w-full h-full scale-[0.95] translate-y-3 opacity-75 pointer-events-none rounded-[30px] border border-zinc-200 dark:border-white/5 bg-white dark:bg-navy-950 transition-all duration-300"
             style={{ zIndex: 2 }}
           />
         )}
@@ -209,13 +212,13 @@ export default function SwipeDeck({
             initial={{ opacity: 0, y: 10, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="absolute -top-4 right-0 z-50 bg-violet-600 text-white px-3 py-1.5 rounded-xl font-bold text-xs shadow-lg border border-violet-400 flex items-center gap-1.5"
+            className="absolute -top-4 right-0 z-50 bg-gradient-to-r from-violet-600 to-coral-500 text-white px-3.5 py-1.5 rounded-xl font-black text-[10px] uppercase tracking-wider shadow-lg border border-violet-400/40 flex items-center gap-1.5 glow-violet"
           >
             🔥 {currentLikes} / {totalMembers} liked this
           </motion.div>
         )}
 
-        {/* Superlike Animation Toast (any card in deck — guests may be on same index in mock sync) */}
+        {/* Superlike Animation Toast */}
         <AnimatePresence>
           {superlikeToast && (() => {
             const superlikedItem = movies.find((m) => m.id === superlikeToast.contentId);
@@ -228,9 +231,9 @@ export default function SwipeDeck({
                 initial={{ opacity: 0, y: -20, scale: 0.8 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                className="absolute top-10 inset-x-4 z-50 bg-amber-500/90 backdrop-blur-md text-white p-3 rounded-2xl font-black text-sm text-center shadow-xl border border-amber-400 flex items-center justify-center gap-2"
+                className="absolute top-10 inset-x-4 z-50 bg-amber-500 text-black p-3.5 rounded-2xl font-black text-xs text-center shadow-xl border border-amber-400 flex items-center justify-center gap-2 glow-gold"
               >
-                <Zap className="w-5 h-5 fill-current" />
+                <Zap className="w-4 h-4 fill-current animate-bounce" />
                 {superlikeToast.username} superliked this {label}!
               </motion.div>
             );
@@ -244,19 +247,19 @@ export default function SwipeDeck({
         {historyLength > 0 && (
           <button
             onClick={undo}
-            className="w-12 h-12 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-navy-900/90 text-violet-600 dark:text-violet-400 hover:scale-110 active:scale-95 transition-all shadow-md flex items-center justify-center"
+            className="w-13 h-13 rounded-full border border-zinc-200 dark:border-white/15 bg-white dark:bg-navy-900/80 backdrop-blur-md text-violet-600 dark:text-violet-400 hover:scale-115 hover:text-violet-500 dark:hover:text-violet-300 hover:border-violet-500/30 hover:shadow-lg active:scale-95 transition-all duration-300 shadow-md flex items-center justify-center cursor-pointer"
             title="Undo"
             aria-label="Undo last swipe"
             data-testid="swipe-undo-button"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
           </button>
         )}
 
         {/* Dislike / Nope button */}
         <button
           onClick={() => triggerButtonSwipe('dislike')}
-          className="w-14 h-14 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-navy-900/90 text-rose-500 hover:text-rose-400 hover:scale-110 active:scale-95 transition-all shadow-md flex items-center justify-center"
+          className="w-16 h-16 rounded-full border border-zinc-200 dark:border-white/15 bg-white dark:bg-navy-900/80 backdrop-blur-md text-coral-500 hover:text-white hover:bg-coral-500 hover:border-coral-500 hover:shadow-xl hover:shadow-coral-500/30 hover:scale-115 active:scale-95 transition-all duration-300 shadow-md flex items-center justify-center cursor-pointer"
           title="Dislike"
           aria-label="Dislike movie"
           data-testid="swipe-dislike-button"
@@ -267,7 +270,11 @@ export default function SwipeDeck({
         {/* Premium Super Like Button */}
         <button
           onClick={() => triggerButtonSwipe('superlike')}
-          className={`w-12 h-12 rounded-full border ${isPremium ? 'border-amber-500/30 text-amber-500 bg-amber-500/10 hover:text-amber-400' : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-navy-900/90 text-amber-500'} hover:scale-110 active:scale-95 transition-all shadow-md flex items-center justify-center`}
+          className={`w-13 h-13 rounded-full border ${
+            isPremium
+              ? 'border-amber-500/40 text-amber-500 bg-amber-500/10 hover:bg-amber-500 hover:text-black hover:border-amber-500 hover:shadow-xl hover:shadow-amber-500/30'
+              : 'border-zinc-200 dark:border-white/15 bg-white dark:bg-navy-900/80 text-amber-500 hover:bg-amber-500/10 hover:scale-115'
+          } active:scale-95 transition-all duration-300 shadow-md flex items-center justify-center cursor-pointer`}
           title="Super Like"
           aria-label="Superlike movie"
           data-testid="swipe-superlike-button"
@@ -278,7 +285,7 @@ export default function SwipeDeck({
         {/* Like Button */}
         <button
           onClick={() => triggerButtonSwipe('like')}
-          className="w-14 h-14 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-navy-900/90 text-emerald-500 hover:text-emerald-400 hover:scale-110 active:scale-95 transition-all shadow-md flex items-center justify-center"
+          className="w-16 h-16 rounded-full border border-zinc-200 dark:border-white/15 bg-white dark:bg-navy-900/80 backdrop-blur-md text-emerald-500 hover:text-white hover:bg-emerald-500 hover:border-emerald-500 hover:shadow-xl hover:shadow-emerald-500/30 hover:scale-115 active:scale-95 transition-all duration-300 shadow-md flex items-center justify-center cursor-pointer"
           title="Like"
           aria-label="Like movie"
           data-testid="swipe-like-button"

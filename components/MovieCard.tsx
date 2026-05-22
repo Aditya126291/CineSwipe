@@ -128,17 +128,18 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
   return (
     <div
       onClick={handleCardClick}
-      className="w-full max-w-sm aspect-[2/3] md:max-w-md rounded-3xl cursor-pointer perspective-1000 select-none relative preserve-3d transition-transform duration-300"
+      className="w-full max-w-sm aspect-[2/3] md:max-w-md rounded-[32px] cursor-pointer perspective-1000 select-none relative preserve-3d transition-transform duration-300 hover:scale-[1.01]"
     >
       <motion.div
         animate={{ rotateY: isFlipped ? 180 : 0 }}
-        transition={{ type: 'spring', damping: 20, stiffness: 80 }}
+        transition={{ type: 'spring', damping: 22, stiffness: 90 }}
         className="w-full h-full relative preserve-3d flex flex-col"
       >
         {/* ================= FRONT SIDE ================= */}
-        <div className="absolute inset-0 w-full h-full backface-hidden rounded-3xl border border-zinc-200 dark:border-zinc-800/80 bg-white dark:bg-navy-950 flex flex-col overflow-hidden shadow-2xl">
+        <div className="absolute inset-0 w-full h-full backface-hidden rounded-[30px] border border-zinc-200 dark:border-white/10 bg-white dark:bg-navy-950 flex flex-col overflow-hidden shadow-2xl transition-colors duration-300">
+          
           {/* Movie Poster Background */}
-          <div className="w-full flex-1 bg-zinc-900 relative overflow-hidden group">
+          <div className="w-full flex-1 bg-zinc-950 relative overflow-hidden group">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               key={movie.id}
@@ -149,15 +150,15 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
               onError={handlePosterError}
             />
             {/* Dark gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-transparent to-black/30" />
+            <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-transparent to-black/35" />
 
             {/* Poster Info Pills */}
-            <div className="absolute top-4 left-4 flex gap-2">
-              <span className="px-2.5 py-1 text-[10px] font-extrabold uppercase bg-black/60 text-white rounded-full backdrop-blur-md border border-white/10 flex items-center gap-1">
+            <div className="absolute top-5 left-5 flex gap-2">
+              <span className="px-3 py-1 text-[10px] font-black uppercase bg-black/60 text-white rounded-xl backdrop-blur-md border border-white/10 flex items-center gap-1.5 shadow-md">
                 {movie.mediaType === 'tv' ? 'Series' : 'Movie'}
               </span>
               {movie.mediaType === 'tv' && movie.numberOfSeasons && (
-                <span className="px-2.5 py-1 text-[10px] font-extrabold bg-violet-600/70 text-white rounded-full backdrop-blur-md border border-violet-500/20">
+                <span className="px-3 py-1 text-[10px] font-black bg-violet-600/80 text-white rounded-xl backdrop-blur-md border border-violet-500/20 shadow-md">
                   {movie.numberOfSeasons} Seasons
                 </span>
               )}
@@ -169,40 +170,40 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
                 e.stopPropagation();
                 onFlip(true);
               }}
-              className="no-flip absolute bottom-4 right-4 animate-float flex items-center gap-1 text-[10px] font-bold text-white bg-black/60 border border-white/15 px-2.5 py-1 rounded-full backdrop-blur-md cursor-pointer hover:bg-black/80 transition-all active:scale-95 z-20"
+              className="no-flip absolute bottom-5 right-5 animate-float flex items-center gap-1.5 text-[10px] font-black text-white bg-violet-600/90 hover:bg-violet-600 border border-violet-400/40 px-3.5 py-1.5 rounded-full backdrop-blur-md cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-lg shadow-violet-500/30 z-20"
               aria-label="Show trailer details and flip card"
               data-testid="card-flip-button"
             >
-              <Play className="w-3 h-3 fill-white" /> Tap to Watch Trailer
+              <Play className="w-3.5 h-3.5 fill-white" /> Watch Trailer
             </button>
           </div>
 
           {/* Details Footer */}
-          <div className="p-6 bg-white dark:bg-navy-950 flex flex-col gap-2">
+          <div className="p-6 bg-white dark:bg-navy-900 flex flex-col gap-2.5 border-t border-zinc-150 dark:border-white/5">
             <div className="flex justify-between items-start gap-4">
-              <h2 className="text-xl font-extrabold text-zinc-900 dark:text-white truncate">
+              <h2 className="text-2xl font-black text-zinc-950 dark:text-white truncate tracking-tight">
                 {movie.title}
               </h2>
-              <div className="flex items-center gap-1 text-amber-500 font-bold bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg text-sm">
-                <Star className="w-4 h-4 fill-amber-500" />
+              <div className="flex items-center gap-1 text-amber-500 font-extrabold bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 rounded-xl text-xs shrink-0 shadow-sm backdrop-blur-sm">
+                <Star className="w-3.5 h-3.5 fill-amber-500" />
                 {movie.rating || 'N/A'}
               </div>
             </div>
 
             {/* Release year and metadata info */}
-            <div className="flex items-center gap-2.5 text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+            <div className="flex items-center gap-2.5 text-xs text-zinc-500 dark:text-zinc-400 font-bold uppercase tracking-wide">
               <span>{movie.releaseYear}</span>
-              <span>•</span>
-              <span className="capitalize">{movie.mediaType}</span>
+              <span className="text-zinc-300 dark:text-zinc-800">•</span>
+              <span className="capitalize text-violet-500 dark:text-violet-400">{movie.mediaType}</span>
               {movie.voteCount > 0 && (
                 <>
-                  <span>•</span>
-                  <span>({movie.voteCount.toLocaleString()} votes)</span>
+                  <span className="text-zinc-300 dark:text-zinc-800">•</span>
+                  <span className="text-[10px]">({movie.voteCount.toLocaleString()} votes)</span>
                 </>
               )}
             </div>
 
-            <p className="text-xs text-zinc-600 dark:text-zinc-300 line-clamp-3 leading-relaxed mt-1">
+            <p className="text-xs text-zinc-600 dark:text-zinc-300 line-clamp-3 leading-relaxed font-medium mt-1">
               {movie.overview || 'No description available.'}
             </p>
           </div>
@@ -210,7 +211,7 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
 
         {/* ================= BACK SIDE (Y-Axis 180 Rotated) ================= */}
         <div
-          className="absolute inset-0 w-full h-full backface-hidden rounded-3xl border border-zinc-200 dark:border-zinc-800/80 bg-navy-950 flex flex-col overflow-hidden shadow-2xl"
+          className="absolute inset-0 w-full h-full backface-hidden rounded-[30px] border border-zinc-200 dark:border-white/10 bg-navy-950 flex flex-col overflow-hidden shadow-2xl"
           style={{ transform: 'rotateY(180deg)' }}
         >
           {/* Interactive Trailer Core */}
@@ -221,13 +222,13 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
                   ref={iframeRef}
                   src={getYoutubeEmbedUrl(movie.trailerKey)}
                   title={`${movie.title} Official Trailer`}
-                  className="w-full h-full"
+                  className="w-full h-full border-b border-white/5"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
                 />
                 <button
                   onClick={handleTrailerStop}
-                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 border border-white/20 text-white hover:bg-black transition-all"
+                  className="absolute top-3 right-3 p-2 rounded-full bg-black/70 border border-white/20 text-white hover:bg-black transition-all shadow-md cursor-pointer"
                   aria-label="Stop video"
                   data-testid="trailer-stop-button"
                 >
@@ -235,31 +236,31 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
                 </button>
               </div>
             ) : (
-              <div className="w-full h-full relative flex items-center justify-center bg-zinc-950">
+              <div className="w-full h-full relative flex items-center justify-center bg-zinc-950 overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   key={movie.id}
                   src={backdropSrc}
                   alt={movie.title}
-                  className="absolute inset-0 w-full h-full object-cover opacity-40 blur-[2px]"
+                  className="absolute inset-0 w-full h-full object-cover opacity-35 blur-[1px] transition-transform duration-500"
                   draggable={false}
                   onError={handleBackdropError}
                 />
-                <div className="absolute inset-0 bg-black/40" />
+                <div className="absolute inset-0 bg-black/50" />
 
                 {movie.trailerKey ? (
                   <button
                     onClick={handleTrailerPlay}
-                    className="p-4 rounded-full bg-violet-600/90 text-white border border-violet-400 hover:scale-110 active:scale-95 transition-all shadow-lg shadow-violet-500/30 flex items-center justify-center z-10"
+                    className="p-5 rounded-full bg-violet-600/90 text-white border border-violet-400 hover:scale-110 active:scale-95 transition-all shadow-xl shadow-violet-500/40 flex items-center justify-center z-10 cursor-pointer"
                     aria-label="Play Trailer"
                     data-testid="trailer-play-button"
                   >
-                    <Play className="w-8 h-8 fill-white ml-1" />
+                    <Play className="w-7 h-7 fill-white ml-1" />
                   </button>
                 ) : (
-                  <div className="flex flex-col items-center gap-2 text-zinc-400 z-10 text-center px-4">
+                  <div className="flex flex-col items-center gap-2.5 text-zinc-400 z-10 text-center px-4">
                     <Film className="w-10 h-10 text-zinc-500" />
-                    <span className="text-xs font-bold">Official trailer unavailable</span>
+                    <span className="text-xs font-black uppercase tracking-wider text-zinc-500">Official trailer unavailable</span>
                   </div>
                 )}
               </div>
@@ -267,17 +268,17 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
           </div>
 
           {/* Details & Interactive Provider Links */}
-          <div className="p-6 flex-1 flex flex-col justify-between bg-navy-950 text-white">
+          <div className="p-6 flex-1 flex flex-col justify-between bg-navy-950 text-white relative">
             <div className="space-y-4">
               <div className="flex justify-between items-start gap-4">
-                <h3 className="text-lg font-extrabold truncate">{movie.title}</h3>
-                <span className="text-xs bg-white/10 border border-white/15 px-2.5 py-1 rounded-full backdrop-blur-md">
+                <h3 className="text-xl font-black truncate tracking-tight">{movie.title}</h3>
+                <span className="text-[10px] font-black uppercase tracking-wide bg-white/10 border border-white/15 px-3 py-1 rounded-xl backdrop-blur-md text-zinc-300">
                   Trailer Details
                 </span>
               </div>
 
               {/* Streaming Platforms availability grid */}
-              <div className="no-flip">
+              <div className="no-flip bg-navy-900/50 p-4 rounded-2xl border border-white/5 shadow-inner">
                 <ProviderIcons providers={movie.providers} />
               </div>
             </div>
@@ -293,20 +294,22 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
                   role="button"
                   aria-label="Unlock deep stream links with CineSwipe+"
                   data-testid="card-upgrade-button"
-                  className="no-flip mt-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between gap-3 text-amber-400 hover:bg-amber-500/15 active:scale-98 transition-all"
+                  className="no-flip mt-2 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 text-amber-400 hover:bg-amber-500/15 active:scale-98 transition-all duration-300 cursor-pointer shadow-md"
                 >
-                  <div className="flex items-center gap-2 text-left">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
+                  <div className="flex items-center gap-3.5 text-left">
+                    <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500 shadow-sm animate-pulse">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                    </div>
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-extrabold flex items-center gap-1 uppercase">
-                        Get Deep Streams link <Sparkles className="w-2.5 h-2.5 fill-amber-400" />
+                      <span className="text-xs font-black flex items-center gap-1 uppercase tracking-wide text-amber-500">
+                        Get Deep Streams <Sparkles className="w-3 h-3 fill-amber-500" />
                       </span>
-                      <span className="text-[9px] text-zinc-400 leading-tight">
+                      <span className="text-[10px] text-zinc-400 leading-tight font-medium">
                         Unlock deep streaming links with CineSwipe+
                       </span>
                     </div>
                   </div>
-                  <span className="text-[10px] font-black uppercase text-amber-500 px-2 py-1 bg-amber-500/15 rounded-md shrink-0">
+                  <span className="text-[10px] font-black uppercase text-white px-3 py-1.5 bg-amber-500 hover:bg-amber-400 rounded-xl shrink-0 transition-colors shadow-sm">
                     Unlock
                   </span>
                 </div>
