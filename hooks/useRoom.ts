@@ -37,6 +37,11 @@ export function useRoom(
   const matchedTrackerRef = useRef<Set<number>>(new Set());
   const superlikeTrackerRef = useRef<Set<string>>(new Set());
   const [forceMockFallback, setForceMockFallback] = useState(false);
+
+  const membersRef = useRef<RoomMember[]>([]);
+  useEffect(() => {
+    membersRef.current = members;
+  }, [members]);
   const isLocalMock = !hasSupabase() || !supabase || forceMockFallback;
 
   const recordRoomSwipe = useCallback(
@@ -101,8 +106,24 @@ export function useRoom(
 
     // 2. Listen to WebSocket Broadcast for swipe actions (eliminates DB replication requirements)
     channel.on('broadcast', { event: 'swipe-action' }, (payload) => {
-      const { user_id, content_id, direction, timestamp, username: swiperName } = payload.payload;
-      recordRoomSwipe(user_id, content_id, direction, timestamp);
+      const { user_id, content_id, direction, timestamp, username: swiperName, movie } = payload.payload;
+      
+      setActiveSwipes((currentSwipes) => {
+        const movieSwipes = {
+          ...(currentSwipes[content_id] || {}),
+          [user_id]: { direction, timestamp: timestamp || Date.now() },
+        };
+        const mergedSwipes = { ...currentSwipes, [content_id]: movieSwipes };
+        const memberIds = membersRef.current.map((m) => m.user_id);
+
+        if (isRoomMatch(mergedSwipes, content_id, memberIds)) {
+          if (movie && !matchedTrackerRef.current.has(content_id)) {
+            matchedTrackerRef.current.add(content_id);
+            onMatch(movie, direction === 'superlike' ? `${swiperName} Super Liked this!` : 'Everyone Swiped Liked!');
+          }
+        }
+        return mergedSwipes;
+      });
       
       // Superlike animation event
       if (direction === 'superlike' && swiperName) {
@@ -124,7 +145,11 @@ export function useRoom(
 
     // 3. Listen to realtime Broadcast for match celebration triggers
     channel.on('broadcast', { event: 'match-trigger' }, (payload) => {
-      onMatch(payload.payload.movie, payload.payload.reason);
+      const movie = payload.payload.movie;
+      if (movie && !matchedTrackerRef.current.has(movie.id)) {
+        matchedTrackerRef.current.add(movie.id);
+        onMatch(movie, payload.payload.reason);
+      }
     });
 
     // 4. Listen to realtime Broadcast for host session start trigger
@@ -508,6 +533,7 @@ export function useRoom(
           direction: direction,
           timestamp: Date.now(),
           username: username,
+          movie: content, // Include movie object for reactive match detection
         },
       });
     }
@@ -534,7 +560,7 @@ export function useRoom(
           [userId]: { direction, timestamp: Date.now() },
         };
 
-        const memberIds = members.map((m) => m.user_id);
+        const memberIds = membersRef.current.map((m) => m.user_id);
         const mergedSwipes = { ...currentSwipes, [content.id]: movieSwipes };
 
         if (isRoomMatch(mergedSwipes, content.id, memberIds)) {
@@ -546,7 +572,10 @@ export function useRoom(
               reason: direction === 'superlike' ? `${username} Super Liked this!` : 'Everyone Swiped Liked!',
             },
           });
-          onMatch(content, direction === 'superlike' ? 'Super Liked!' : 'Instant Match!');
+          if (!matchedTrackerRef.current.has(content.id)) {
+            matchedTrackerRef.current.add(content.id);
+            onMatch(content, direction === 'superlike' ? 'Super Liked!' : 'Instant Match!');
+          }
         }
 
         return mergedSwipes;

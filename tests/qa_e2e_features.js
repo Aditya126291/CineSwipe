@@ -139,7 +139,7 @@ const path = require('path');
     await hostPage.click('button:has-text("Keep Surfing")');
     
     console.log("Waiting for Movie Night Planner to be visible...");
-    await hostPage.waitForSelector('text=Excitement Rank', { timeout: 10000 });
+    await hostPage.waitForSelector('text=Engagement Rank', { timeout: 10000 });
     
     await hostPage.screenshot({ path: `${artifactsDir}/movie_night_planner.png` });
     console.log("Screenshot: movie_night_planner.png saved.");

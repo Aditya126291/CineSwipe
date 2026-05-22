@@ -63,12 +63,16 @@ Allowed MIME types are configured to support optimal, lightweight assets:
 
 ## One-Time Migration and Patching
 
-For reproducibility, two automated migration scripts are maintained in the [`scripts/`](file:///c:/Users/Aditya%20Kumar/OneDrive/Desktop/CineSwipe/scripts/) folder:
+For reproducibility, the following automated migration and resolution scripts are maintained in the [`scripts/`](file:///c:/Users/Aditya%20Kumar/OneDrive/Desktop/CineSwipe/scripts/) folder:
 
 1. **[`migrate-posters.ts`](file:///c:/Users/Aditya%20Kumar/OneDrive/Desktop/CineSwipe/scripts/migrate-posters.ts)**
    Seeds the `movies_catalog` database table and attempts to download active assets, saving them directly into your Supabase Storage bucket.
 2. **[`patch-failed-posters.ts`](file:///c:/Users/Aditya%20Kumar/OneDrive/Desktop/CineSwipe/scripts/patch-failed-posters.ts)**
    A patch migration that handles cases where external TMDB assets were broken/404. It downloads high-quality, verified Wikipedia public domain movie posters, backdrops, and SVG logos, uploads them to your Supabase `posters` bucket, and updates the database row references automatically.
+3. **[`resolve-trailers.ts`](file:///c:/Users/Aditya%20Kumar/OneDrive/Desktop/CineSwipe/scripts/resolve-trailers.ts)**
+   Directly queries YouTube search results for broken titles, parses candidate video IDs, verifies active thumbnails via a lightweight CDN HEAD request, and performs a single oEmbed embeddability test to find highly reliable, active, and embeddable keys for all catalog entries.
+4. **[`patch-database-trailers.ts`](file:///c:/Users/Aditya%20Kumar/OneDrive/Desktop/CineSwipe/scripts/patch-database-trailers.ts)**
+   Reads the verified YouTube keys from the scraper output and programmatically updates the `trailer_key` column in the Supabase `movies_catalog` table.
 
 ---
 
