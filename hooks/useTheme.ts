@@ -14,8 +14,15 @@ export function useTheme() {
     const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     const initialTheme = savedTheme || systemTheme;
     
-    setTheme(initialTheme);
+    // Toggle class immediately to prevent transition flash
     document.documentElement.classList.toggle('dark', initialTheme === 'dark');
+    
+    // Defer state update to avoid synchronous cascading renders warning
+    const timer = setTimeout(() => {
+      setTheme(initialTheme);
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const toggleTheme = () => {

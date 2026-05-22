@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Film, Play, Sparkles, Users, User, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
+import { Film, Sparkles, Users, User, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
 import Link from 'next/link';
+import { hasSupabase, supabase } from '@/lib/supabase/client';
 
 export default function Home() {
   const router = useRouter();
@@ -30,18 +31,33 @@ export default function Home() {
     setJoinError('');
     if (!roomCode.trim() || roomCode.trim().length !== 6) return;
 
+    const normalizedCode = roomCode.trim().toUpperCase();
     setLoading(true);
     try {
-      const res = await fetch(`/api/rooms?code=${roomCode.trim().toUpperCase()}`);
-      if (!res.ok) {
-        const data = await res.json();
-        setJoinError(data.error || 'Room not found');
-        setLoading(false);
-        return;
+      if (hasSupabase() && supabase) {
+        const { data, error } = await supabase
+          .from('rooms')
+          .select('code')
+          .eq('code', normalizedCode)
+          .eq('status', 'active')
+          .maybeSingle();
+
+        if (error || !data) {
+          setJoinError('This room does not exist yet. Please ask the host for the correct code!');
+          return;
+        }
+      } else {
+        const res = await fetch(`/api/rooms?code=${normalizedCode}`);
+        if (!res.ok) {
+          const data = await res.json();
+          setJoinError(data.error || 'Room not found');
+          return;
+        }
       }
-      router.push(`/room/${roomCode.trim().toUpperCase()}`);
-    } catch (err) {
+      router.push(`/room/${normalizedCode}`);
+    } catch {
       setJoinError('Failed to verify room');
+    } finally {
       setLoading(false);
     }
   };

@@ -1,10 +1,20 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { safeStorage, safeSessionStorage } from '@/lib/storage';
+import { safeSessionStorage } from '@/lib/storage';
 import { supabase, hasSupabase } from '@/lib/supabase/client';
-import type { Room, RoomMember, Swipe } from '@/lib/supabase/types';
-import type { ContentItem } from '@/lib/tmdb/types';
+import { isRoomMatch } from '@/lib/room-match';
+import type { Room, RoomMember } from '@/lib/supabase/types';
+import type { ContentItem } from '@/lib/types/content';
+
+function isNetworkFailure(err: unknown): boolean {
+  if (err instanceof TypeError) return true;
+  if (err instanceof Error) {
+    const msg = err.message.toLowerCase();
+    return msg.includes('fetch') || msg.includes('network') || msg.includes('failed to fetch');
+  }
+  return false;
+}
 
 export function useRoom(
   roomCode: string,
@@ -23,10 +33,120 @@ export function useRoom(
   const [userId, setUserId] = useState<string>('');
   const [isSwipingStarted, setIsSwipingStarted] = useState<boolean>(false);
 
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<import('@supabase/supabase-js').RealtimeChannel | null>(null);
   const matchedTrackerRef = useRef<Set<number>>(new Set());
   const superlikeTrackerRef = useRef<Set<string>>(new Set());
-  const isLocalMock = !hasSupabase() || !supabase;
+  const [forceMockFallback, setForceMockFallback] = useState(false);
+  const isLocalMock = !hasSupabase() || !supabase || forceMockFallback;
+
+  const recordRoomSwipe = useCallback(
+    (swipeUserId: string, contentId: number, direction: 'like' | 'dislike' | 'superlike', timestamp?: number) => {
+      setActiveSwipes((prev) => {
+        const currentMovieSwipes = prev[contentId] || {};
+        const updatedMovieSwipes = { 
+          ...currentMovieSwipes, 
+          [swipeUserId]: { direction, timestamp: timestamp || Date.now() } 
+        };
+        return { ...prev, [contentId]: updatedMovieSwipes };
+      });
+    },
+    []
+  );
+
+  // Subscribe to realtime database changes and broadcast
+  function subscribeToRoom(roomId: string) {
+    if (!supabase) return;
+
+    const channel = supabase.channel(`cineswipe:room:${roomId}`, {
+      config: {
+        presence: { key: userId },
+      },
+    });
+
+    channelRef.current = channel;
+
+    // 1. WebSocket Realtime Presence synchronization for live lobby updates
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const presenceState = channel.presenceState();
+        console.log('Presence sync update:', presenceState);
+
+        const activeMembers: RoomMember[] = [];
+        Object.keys(presenceState).forEach((key) => {
+          const userPresences = presenceState[key] as { user_id?: string; username?: string; avatar_color?: string; is_premium?: boolean; joined_at?: string; }[];
+          if (userPresences && userPresences.length > 0) {
+            const p = userPresences[0];
+            activeMembers.push({
+              room_id: roomId,
+              user_id: p.user_id || key,
+              username: p.username || 'Anonymous Guest',
+              avatar_color: p.avatar_color || '#7c3aed',
+              is_premium: !!p.is_premium,
+              joined_at: p.joined_at || new Date().toISOString(),
+            });
+          }
+        });
+
+        if (activeMembers.length > 0) {
+          activeMembers.sort((a, b) => a.joined_at.localeCompare(b.joined_at));
+          setMembers(activeMembers);
+        }
+      })
+      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        console.log('Presence join:', key, newPresences);
+      })
+      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        console.log('Presence leave:', key, leftPresences);
+      });
+
+    // 2. Listen to WebSocket Broadcast for swipe actions (eliminates DB replication requirements)
+    channel.on('broadcast', { event: 'swipe-action' }, (payload) => {
+      const { user_id, content_id, direction, timestamp, username: swiperName } = payload.payload;
+      recordRoomSwipe(user_id, content_id, direction, timestamp);
+      
+      // Superlike animation event
+      if (direction === 'superlike' && swiperName) {
+        // Dispatch a custom event to the window so MovieCard/SwipeDeck can show an animation
+        window.dispatchEvent(new CustomEvent('cineswipe-superlike', {
+          detail: { username: swiperName, contentId: content_id }
+        }));
+      }
+    });
+
+    channel.on('broadcast', { event: 'undo-swipe-action' }, (payload) => {
+      const { user_id, content_id } = payload.payload;
+      setActiveSwipes((prev) => {
+        const movieSwipes = { ...prev[content_id] };
+        delete movieSwipes[user_id];
+        return { ...prev, [content_id]: movieSwipes };
+      });
+    });
+
+    // 3. Listen to realtime Broadcast for match celebration triggers
+    channel.on('broadcast', { event: 'match-trigger' }, (payload) => {
+      onMatch(payload.payload.movie, payload.payload.reason);
+    });
+
+    // 4. Listen to realtime Broadcast for host session start trigger
+    channel.on('broadcast', { event: 'session-start' }, () => {
+      console.log('Session started via realtime broadcast event');
+      setIsSwipingStarted(true);
+    });
+
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('Successfully subscribed to room realtime channel!');
+        // Track our presence immediately
+        await channel.track({
+          user_id: userId,
+          username: username || 'Anonymous Guest',
+          avatar_color: avatarColor,
+          is_premium: isPremiumUser,
+          joined_at: new Date().toISOString(),
+        });
+      }
+    });
+  }
 
   // Helper to generate a valid RFC4122 v4 UUID
   const generateUUID = () => {
@@ -52,7 +172,10 @@ export function useRoom(
       savedId = generateUUID();
       safeSessionStorage.setItem('cineswipe-user-id', savedId);
     }
-    setUserId(savedId);
+    const timer = setTimeout(() => {
+      setUserId(savedId);
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   // Initialize room configuration
@@ -134,16 +257,18 @@ export function useRoom(
           });
 
         if (userUpsertErr) {
-          console.warn('User profile upsert failed, continuing anyway:', userUpsertErr);
+          console.error('User profile upsert failed:', userUpsertErr);
+          throw new Error(`User profile setup failed: ${userUpsertErr.message || 'Unknown database error'}`);
         }
 
         // Find existing room
-        let { data: existingRoom, error: roomErr } = await supabase!
+        const { data: existingRoomData, error: roomErr } = await supabase!
           .from('rooms')
           .select('*')
           .eq('code', roomCode)
           .eq('status', 'active')
           .single();
+        let existingRoom = existingRoomData;
 
         if (roomErr || !existingRoom) {
           // If we are NOT the host, fail with room not found error
@@ -157,19 +282,20 @@ export function useRoom(
             .insert({
               code: roomCode,
               created_by: userId,
+              status: 'active',
               max_members: isPremiumUser ? 10 : 3,
             })
             .select()
             .single();
 
-          if (createErr) throw createErr;
+          if (createErr) throw new Error(`Room creation failed: ${createErr.message || 'Unknown database error'}`);
           existingRoom = newRoom;
         }
 
         setRoom(existingRoom);
 
         // Before adding user, verify capacity
-        const { count, error: countErr } = await supabase!
+        const { count } = await supabase!
           .from('room_members')
           .select('*', { count: 'exact', head: true })
           .eq('room_id', existingRoom.id);
@@ -201,7 +327,7 @@ export function useRoom(
           .from('room_members')
           .upsert(memberData);
 
-        if (joinErr) throw joinErr;
+        if (joinErr) throw new Error(`Failed to join room: ${joinErr.message || 'Unknown database error'}`);
 
         // Fetch historical swipes from DB to rebuild current swipes state
         const { data: allSwipes } = await supabase!
@@ -216,7 +342,7 @@ export function useRoom(
               swipesMap[s.content_id] = {};
             }
             swipesMap[s.content_id][s.user_id] = { 
-              direction: s.direction as any, 
+              direction: s.direction as 'like' | 'dislike' | 'superlike', 
               timestamp: new Date(s.swiped_at || Date.now()).getTime() 
             };
           });
@@ -229,9 +355,19 @@ export function useRoom(
 
         setIsJoined(true);
         subscribeToRoom(existingRoom.id);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Room connection failure:', err);
-        setError(err.message || 'Failed to connect to multiplayer session');
+        if (!forceMockFallback && hasSupabase() && isNetworkFailure(err)) {
+          setForceMockFallback(true);
+          setError('Supabase is unreachable. Switched to local room sync for this session.');
+          return;
+        }
+        const message = err instanceof Error
+          ? err.message
+          : (typeof err === 'object' && err !== null && 'message' in err)
+            ? String((err as { message: unknown }).message)
+            : 'Failed to connect to multiplayer session';
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -240,11 +376,11 @@ export function useRoom(
     fetchOrCreateRoom();
 
     return () => {
-      if (channelRef.current) {
-        supabase!.removeChannel(channelRef.current);
+      if (channelRef.current && supabase) {
+        supabase.removeChannel(channelRef.current);
       }
     };
-  }, [roomCode, userId, isLocalMock]);
+  }, [roomCode, userId, isLocalMock, forceMockFallback, isHostMode, isPremiumUser, username, avatarColor]);
 
   // Polling for local mock sync
   useEffect(() => {
@@ -289,7 +425,7 @@ export function useRoom(
                   const uniqueKey = `${movieId}-${swipingUserId}`;
                   if (!superlikeTrackerRef.current.has(uniqueKey)) {
                     superlikeTrackerRef.current.add(uniqueKey);
-                    const swiperMember = currentMembers.find((m: any) => m.user_id === swipingUserId);
+                    const swiperMember = currentMembers.find((m: RoomMember) => m.user_id === swipingUserId);
                     if (swiperMember) {
                       window.dispatchEvent(new CustomEvent('cineswipe-superlike', {
                         detail: { username: swiperMember.username, contentId: movieId }
@@ -302,21 +438,15 @@ export function useRoom(
           }
 
           if (currentMembers.length > 1) {
+            const memberIds = currentMembers.map((m: RoomMember) => m.user_id);
             Object.keys(syncData.activeSwipes).forEach((movieIdStr) => {
               const movieId = parseInt(movieIdStr, 10);
-              const movieSwipes = syncData.activeSwipes[movieId] as Record<string, { direction: string, timestamp: number }>;
-              const likes = Object.values(movieSwipes).filter((s) => s.direction === 'like' || s.direction === 'superlike');
+              if (!isRoomMatch(syncData.activeSwipes, movieId, memberIds)) return;
 
-              // If everyone has liked this movie and we haven't matched it yet locally
-              if (likes.length >= currentMembers.length) {
-                // Find movie info in syncData.movies
-                const movie = syncData.movies?.[movieId];
-                if (movie) {
-                  if (!matchedTrackerRef.current.has(movieId)) {
-                    matchedTrackerRef.current.add(movieId);
-                    onMatch(movie, 'Instant Match!');
-                  }
-                }
+              const movie = syncData.movies?.[movieId];
+              if (movie && !matchedTrackerRef.current.has(movieId)) {
+                matchedTrackerRef.current.add(movieId);
+                onMatch(movie, 'Instant Match!');
               }
             });
           }
@@ -330,116 +460,9 @@ export function useRoom(
       isSubscribed = false;
       clearInterval(interval);
     };
-  }, [isLocalMock, isJoined, roomCode, userId, username, avatarColor, isPremiumUser]);
+  }, [isLocalMock, isJoined, roomCode, userId, username, avatarColor, isPremiumUser, onMatch]);
 
-  // Subscribe to realtime database changes and broadcast
-  const subscribeToRoom = (roomId: string) => {
-    if (!supabase) return;
 
-    const channel = supabase.channel(`cineswipe:room:${roomId}`, {
-      config: {
-        presence: { key: userId },
-      },
-    });
-
-    channelRef.current = channel;
-
-    // 1. WebSocket Realtime Presence synchronization for live lobby updates
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        const presenceState = channel.presenceState();
-        console.log('Presence sync update:', presenceState);
-
-        const activeMembers: RoomMember[] = [];
-        Object.keys(presenceState).forEach((key) => {
-          const userPresences = presenceState[key] as any[];
-          if (userPresences && userPresences.length > 0) {
-            const p = userPresences[0];
-            activeMembers.push({
-              room_id: roomId,
-              user_id: p.user_id || key,
-              username: p.username || 'Anonymous Guest',
-              avatar_color: p.avatar_color || '#7c3aed',
-              is_premium: !!p.is_premium,
-              joined_at: p.joined_at || new Date().toISOString(),
-            });
-          }
-        });
-
-        if (activeMembers.length > 0) {
-          activeMembers.sort((a, b) => a.joined_at.localeCompare(b.joined_at));
-          setMembers(activeMembers);
-        }
-      })
-      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-        console.log('Presence join:', key, newPresences);
-      })
-      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-        console.log('Presence leave:', key, leftPresences);
-      });
-
-    // 2. Listen to WebSocket Broadcast for swipe actions (eliminates DB replication requirements)
-    channel.on('broadcast', { event: 'swipe-action' }, (payload) => {
-      const { user_id, content_id, direction, timestamp, username: swiperName } = payload.payload;
-      recordRoomSwipe(user_id, content_id, direction, timestamp);
-      
-      // Superlike animation event
-      if (direction === 'superlike' && swiperName) {
-        // Dispatch a custom event to the window so MovieCard/SwipeDeck can show an animation
-        window.dispatchEvent(new CustomEvent('cineswipe-superlike', {
-          detail: { username: swiperName, contentId: content_id }
-        }));
-      }
-    });
-
-    channel.on('broadcast', { event: 'undo-swipe-action' }, (payload) => {
-      const { user_id, content_id } = payload.payload;
-      setActiveSwipes((prev) => {
-        const movieSwipes = { ...prev[content_id] };
-        delete movieSwipes[user_id];
-        return { ...prev, [content_id]: movieSwipes };
-      });
-    });
-
-    // 3. Listen to realtime Broadcast for match celebration triggers
-    channel.on('broadcast', { event: 'match-trigger' }, (payload) => {
-      onMatch(payload.payload.movie, payload.payload.reason);
-    });
-
-    // 4. Listen to realtime Broadcast for host session start trigger
-    channel.on('broadcast', { event: 'session-start' }, () => {
-      console.log('Session started via realtime broadcast event');
-      setIsSwipingStarted(true);
-    });
-
-    channel.subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        console.log('Successfully subscribed to room realtime channel!');
-        // Track our presence immediately
-        await channel.track({
-          user_id: userId,
-          username: username || 'Anonymous Guest',
-          avatar_color: avatarColor,
-          is_premium: isPremiumUser,
-          joined_at: new Date().toISOString(),
-        });
-      }
-    });
-  };
-
-  const recordRoomSwipe = useCallback(
-    (swipeUserId: string, contentId: number, direction: 'like' | 'dislike' | 'superlike', timestamp?: number) => {
-      setActiveSwipes((prev) => {
-        const currentMovieSwipes = prev[contentId] || {};
-        const updatedMovieSwipes = { 
-          ...currentMovieSwipes, 
-          [swipeUserId]: { direction, timestamp: timestamp || Date.now() } 
-        };
-        return { ...prev, [contentId]: updatedMovieSwipes };
-      });
-    },
-    []
-  );
 
   // Send swipe logic
   const sendSwipe = async (content: ContentItem, direction: 'like' | 'dislike' | 'superlike') => {
@@ -511,11 +534,10 @@ export function useRoom(
           [userId]: { direction, timestamp: Date.now() },
         };
 
-        const likes = Object.values(movieSwipes).filter((s) => s.direction === 'like' || s.direction === 'superlike');
+        const memberIds = members.map((m) => m.user_id);
+        const mergedSwipes = { ...currentSwipes, [content.id]: movieSwipes };
 
-        // It is a MATCH if everyone in the room has swiped positively
-        if (likes.length >= members.length && members.length > 1) {
-          // Broadcast match-trigger to celebrate on all clients
+        if (isRoomMatch(mergedSwipes, content.id, memberIds)) {
           channelRef.current?.send({
             type: 'broadcast',
             event: 'match-trigger',
@@ -527,7 +549,7 @@ export function useRoom(
           onMatch(content, direction === 'superlike' ? 'Super Liked!' : 'Instant Match!');
         }
 
-        return currentSwipes;
+        return mergedSwipes;
       });
     } catch (err) {
       console.error('Failed to submit realtime swipe:', err);
@@ -536,6 +558,8 @@ export function useRoom(
 
   const undoSwipe = async (contentId: number) => {
     if (!room || !userId) return;
+
+    matchedTrackerRef.current.delete(contentId);
 
     // Locally revert
     setActiveSwipes((prev) => {
@@ -555,7 +579,7 @@ export function useRoom(
             contentId,
           }),
         });
-      } catch (err) {}
+      } catch {}
       return;
     }
 
@@ -580,7 +604,7 @@ export function useRoom(
         .then(({ error }) => {
           if (error) console.error('Supabase swipe delete error:', error);
         });
-    } catch (err) {}
+    } catch {}
   };
 
   const startSession = useCallback(async () => {

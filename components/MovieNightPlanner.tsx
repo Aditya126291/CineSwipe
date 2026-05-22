@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Award, Film, Play, Sparkles, Lock, ArrowRight, Star, RefreshCw, AlertCircle } from 'lucide-react';
-import type { ContentItem } from '@/lib/tmdb/types';
+import { Award, Film, Sparkles, Lock, ArrowRight } from 'lucide-react';
+import type { ContentItem } from '@/lib/types/content';
 import ProviderIcons from './ProviderIcons';
 
 interface MovieNightPlannerProps {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import type { Genre } from '@/lib/tmdb/types';
+import type { Genre } from '@/lib/types/content';
 import { Lock, Sparkles } from 'lucide-react';
 
 interface GenreFilterProps {

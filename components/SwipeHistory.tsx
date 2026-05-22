@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Undo, Heart, Sparkles, Lock, ArrowRight } from 'lucide-react';
-import type { ContentItem } from '@/lib/tmdb/types';
+import type { ContentItem } from '@/lib/types/content';
 
 interface SwipeHistoryProps {
   isOpen: boolean;

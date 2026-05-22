@@ -1,25 +1,41 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { isSandboxPayment, validatePaymentVerifyBody } from '@/lib/validation';
 
 export async function POST(request: Request) {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = await request.json();
+    const body = await request.json();
+    const validationError = validatePaymentVerifyBody(body);
+    if (validationError) {
+      return NextResponse.json({ success: false, error: validationError }, { status: 400 });
+    }
+
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = body;
 
     const key_secret = process.env.RAZORPAY_KEY_SECRET;
 
     if (!key_secret) {
-      if (process.env.NODE_ENV === 'production') {
-        return NextResponse.json({ success: false, error: 'Razorpay secret missing in production' }, { status: 500 });
+      if (process.env.NODE_ENV === 'development' && isSandboxPayment(body)) {
+        return NextResponse.json({ success: true, message: 'Simulated Sandbox Payment Success!' });
       }
-      // Direct sandbox validation
-      return NextResponse.json({ success: true, message: 'Simulated Sandbox Payment Success!' });
+      if (process.env.NODE_ENV === 'development') {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              'Development mock payments require order_mock_* ids, pay_mock_* payment id, and mock_signature_dev signature',
+          },
+          { status: 400 }
+        );
+      }
+      return NextResponse.json({ success: false, error: 'Razorpay secret missing' }, { status: 500 });
     }
 
     // Verify cryptographic signature
-    const body = razorpay_order_id + '|' + razorpay_payment_id;
+    const signaturePayload = razorpay_order_id + '|' + razorpay_payment_id;
     const expectedSignature = crypto
       .createHmac('sha256', key_secret)
-      .update(body.toString())
+      .update(signaturePayload)
       .digest('hex');
 
     const isAuthentic = expectedSignature === razorpay_signature;
@@ -29,10 +45,10 @@ export async function POST(request: Request) {
     } else {
       return NextResponse.json({ success: false, error: 'Cryptographic signature mismatch' }, { status: 400 });
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Razorpay Verification Failure:', error);
     return NextResponse.json(
-      { error: error.message || 'Internal Server Error' },
+      { error: error instanceof Error ? error.message : 'Internal Server Error' },
       { status: 500 }
     );
   }

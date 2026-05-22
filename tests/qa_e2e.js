@@ -4,7 +4,10 @@ const { chromium } = require('playwright');
   console.log("Starting QA test suite...");
   
   const browser = await chromium.launch({ headless: true });
-  const artifactsDir = "C:\\Users\\Aditya Kumar\\.gemini\\antigravity\\brain\\a28c4fa8-9a7c-488c-8d70-d794170bb04d";
+  const path = require('path');
+  const fs = require('fs');
+  const artifactsDir = path.join(__dirname, 'artifacts');
+  fs.mkdirSync(artifactsDir, { recursive: true });
   
   try {
     const hostContext = await browser.newContext();
@@ -47,8 +50,8 @@ const { chromium } = require('playwright');
       await page.goto('http://localhost:3000');
       await page.click('button:has-text("Popcorn Swipe Party")');
       await page.fill('input[placeholder="E.g. MZ94X7"]', roomCode);
-      await page.click('button:has-text("Join")');
-      await page.waitForURL(/\/room\//);
+      await page.locator('form button[type="submit"]').click();
+      await page.waitForURL(/\/room\/[A-Z0-9]{6}/, { timeout: 45000 });
       
       // Guest confirms nickname
       await page.waitForSelector('button:has-text("Confirm Nickname")');

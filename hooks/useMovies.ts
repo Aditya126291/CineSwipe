@@ -1,50 +1,54 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { getPopularMovies, getPopularTV, normalizeToContentItem, getGenres } from '@/lib/tmdb/movies';
-import { getMockContent, MOCK_GENRES, seededRandom } from '@/lib/tmdb/mock-data';
-import { hasTMDBKey, proxyImageUrl } from '@/lib/tmdb/client';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase, hasSupabase } from '@/lib/supabase/client';
 import { initializeWeights, rankMovies } from '@/lib/recommendations';
-import type { ContentItem, Genre } from '@/lib/tmdb/types';
+import { mapCatalogRowToContentItem } from '@/lib/catalog/map-row';
+import { preloadPosterImages } from '@/lib/catalog/preload';
+import type { ContentItem, Genre } from '@/lib/types/content';
+// Removed unused TMDB imports and mock data
 
+export const CATALOG_BATCH_SIZE = 20;
 
-export function useMovies(mediaType: 'movie' | 'tv' | 'all', genreId?: number, shuffleSeed?: string) {
+export type CatalogSource = 'supabase' | 'unknown';
+
+export const ALL_GENRES: Genre[] = [
+  { id: 28, name: 'Action' }, { id: 35, name: 'Comedy' }, { id: 18, name: 'Drama' },
+  { id: 878, name: 'Sci-Fi' }, { id: 53, name: 'Thriller' }, { id: 27, name: 'Horror' },
+  { id: 10749, name: 'Romance' }, { id: 16, name: 'Animation' }, { id: 99, name: 'Documentary' },
+  { id: 14, name: 'Fantasy' }, { id: 10765, name: 'Sci-Fi & Fantasy' },
+  { id: 10759, name: 'Action & Adventure' }, { id: 80, name: 'Crime' }, { id: 9648, name: 'Mystery' }
+];
+
+export function seededRandom(seed: string) {
+  let h = 0xdeadbeef;
+  for (let i = 0; i < seed.length; i++) {
+    h = Math.imul(h ^ seed.charCodeAt(i), 2654435761);
+  }
+  return function () {
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    return ((h ^= h >>> 16) >>> 0) / 4294967296;
+  };
+}
+
+export function useMovies(
+  mediaType: 'movie' | 'tv' | 'all',
+  genreId?: number,
+  shuffleSeed?: string,
+  prefetchFromIndex?: number
+) {
   const [movies, setMovies] = useState<ContentItem[]>([]);
-  const [genres, setGenres] = useState<Genre[]>([]);
+  const genres = ALL_GENRES;
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState<number>(1);
-
-  // Load genres
-  useEffect(() => {
-    async function loadGenres() {
-      try {
-        if (hasTMDBKey()) {
-          const movieGenres = await getGenres('movie');
-          const tvGenres = await getGenres('tv');
-          
-          // Combine and remove duplicates
-          const combined = [...movieGenres];
-          tvGenres.forEach((tvG) => {
-            if (!combined.some((g) => g.id === tvG.id)) {
-              combined.push(tvG);
-            }
-          });
-          setGenres(combined);
-        } else {
-          setGenres(MOCK_GENRES);
-        }
-      } catch (err) {
-        console.error('Failed to load genres from TMDB, using mock genres', err);
-        setGenres(MOCK_GENRES);
-      }
-    }
-    loadGenres();
-  }, []);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [catalogSource, setCatalogSource] = useState<CatalogSource>('unknown');
+  const loadingMoreRef = useRef(false);
 
   const rankFetchedMovies = useCallback((items: ContentItem[]) => {
-    if (shuffleSeed) return items; // Keep sync order in multiplayer!
+    if (shuffleSeed) return items;
     let weights = initializeWeights();
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('cineswipe-genre-weights');
@@ -59,119 +63,110 @@ export function useMovies(mediaType: 'movie' | 'tv' | 'all', genreId?: number, s
     return rankMovies(items, weights);
   }, [shuffleSeed]);
 
-  const loadMovies = useCallback(async (pageNum: number, clear = false) => {
-    setLoading(true);
-    setError(null);
-    try {
-      // 1. Try to load from Supabase Curated Catalog (Commercial-friendly, fast, robust)
-      if (hasSupabase()) {
-        let query = supabase!.from('movies_catalog').select('*');
-        if (mediaType !== 'all') {
-          query = query.eq('media_type', mediaType);
+  const finalizeBatch = useCallback(
+    async (items: ContentItem[], source: CatalogSource, clear: boolean, pageNum: number) => {
+      const ranked = rankFetchedMovies(items);
+
+      let output = ranked;
+      if (shuffleSeed) {
+        const rng = seededRandom(shuffleSeed + '_' + pageNum);
+        output = [...ranked];
+        for (let i = output.length - 1; i > 0; i--) {
+          const j = Math.floor(rng() * (i + 1));
+          [output[i], output[j]] = [output[j], output[i]];
         }
-        if (genreId) {
-          query = query.contains('genres', [genreId]);
-        }
+      }
 
-        const { data, error } = await query;
-        
-        if (!error && data && data.length > 0) {
-          const fetched: ContentItem[] = data.map((item: any) => ({
-            id: item.id,
-            title: item.title,
-            overview: item.overview,
-            rating: Number(item.rating),
-            voteCount: item.vote_count,
-            mediaType: item.media_type,
-            releaseYear: item.release_year,
-            posterUrl: proxyImageUrl(item.poster_url, 'w500'),
-            backdropUrl: proxyImageUrl(item.backdrop_url, 'w1280'),
-            genreIds: item.genres || [],
-            trailerKey: item.trailer_key,
-            providers: item.providers || []
-          }));
+      setCatalogSource(source);
+      setMovies((prev) => (clear ? output : [...prev, ...output]));
+      setHasMore(output.length >= CATALOG_BATCH_SIZE);
+    },
+    [rankFetchedMovies, shuffleSeed]
+  );
 
-          const ranked = rankFetchedMovies(fetched);
+  const loadMovies = useCallback(
+    async (pageNum: number, clear = false) => {
+      if (loadingMoreRef.current && !clear) return;
+      loadingMoreRef.current = true;
+      setLoading(true);
+      setError(null);
 
-          if (shuffleSeed) {
-            const rng = seededRandom(shuffleSeed + '_' + pageNum);
-            const shuffled = [...ranked];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-              const j = Math.floor(rng() * (i + 1));
-              [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      try {
+        let finalItems: ContentItem[] = [];
+
+        if (hasSupabase()) {
+          try {
+            // Standard pagination to ensure no repeats
+            const from = (pageNum - 1) * CATALOG_BATCH_SIZE;
+            const to = from + CATALOG_BATCH_SIZE - 1;
+
+            let query = supabase!.from('movies_catalog').select('*');
+            if (mediaType !== 'all') {
+              query = query.eq('media_type', mediaType);
             }
-            setMovies((prev) => (clear ? shuffled : [...prev, ...shuffled]));
-          } else {
-            setMovies((prev) => (clear ? ranked : [...prev, ...ranked]));
-          }
-          return;
-        }
-      }
+            if (genreId) {
+              query = query.contains('genres', [genreId]);
+            }
+            // Order by ID to ensure consistent pagination before ranking locally
+            query = query.order('id', { ascending: true });
 
-      // 2. Failover to TMDB if API key is active
-      if (hasTMDBKey()) {
-        let fetched: any[] = [];
-        
-        if (mediaType === 'all') {
-          const moviesRes = await getPopularMovies(pageNum, genreId);
-          const tvRes = await getPopularTV(pageNum, genreId);
-          const combined = [];
-          
-          // Interleave movies and tv shows
-          const len = Math.max(moviesRes.results.length, tvRes.results.length);
-          for (let i = 0; i < len; i++) {
-            if (moviesRes.results[i]) combined.push(normalizeToContentItem(moviesRes.results[i], 'movie'));
-            if (tvRes.results[i]) combined.push(normalizeToContentItem(tvRes.results[i], 'tv'));
+            const { data: dbData, error: dbErr } = await query.range(from, to);
+
+            if (dbErr) throw dbErr;
+
+            if (dbData && dbData.length > 0) {
+              finalItems = dbData.map((row) => mapCatalogRowToContentItem(row as Record<string, unknown>));
+            }
+          } catch (supaErr) {
+            console.error('Supabase fetching error:', supaErr);
+            setError('Could not load titles from catalog. Please try again.');
           }
-          fetched = combined;
-        } else if (mediaType === 'tv') {
-          const tvRes = await getPopularTV(pageNum, genreId);
-          fetched = tvRes.results.map((item) => normalizeToContentItem(item, 'tv'));
         } else {
-          const moviesRes = await getPopularMovies(pageNum, genreId);
-          fetched = moviesRes.results.map((item) => normalizeToContentItem(item, 'movie'));
+          setError('Supabase is not configured. Catalog is offline.');
         }
 
-        const ranked = rankFetchedMovies(fetched);
-
-        if (shuffleSeed) {
-          const rng = seededRandom(shuffleSeed + '_' + pageNum);
-          const shuffled = [...ranked];
-          for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(rng() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-          }
-          setMovies((prev) => (clear ? shuffled : [...prev, ...shuffled]));
-        } else {
-          setMovies((prev) => (clear ? ranked : [...prev, ...ranked]));
-        }
-      } else {
-        // 3. Fallback to local high-res curated static array
-        const mockData = getMockContent(mediaType, genreId, shuffleSeed);
-        const ranked = rankFetchedMovies(mockData);
-        setMovies((prev) => (clear ? ranked : [...prev, ...ranked]));
+        await finalizeBatch(finalItems, hasSupabase() ? 'supabase' : 'unknown', clear, pageNum);
+        setHasMore(finalItems.length > 0);
+      } catch (err: unknown) {
+        console.error('Failed to fetch movies:', err);
+        setError('Could not load titles. Please check your internet connection and try again.');
+        setMovies([]);
+        setHasMore(false);
+      } finally {
+        setLoading(false);
+        loadingMoreRef.current = false;
       }
-    } catch (err: any) {
-      console.error('Failed to fetch movies, using static fallback:', err);
-      const mockData = getMockContent(mediaType, genreId, shuffleSeed);
-      const ranked = rankFetchedMovies(mockData);
-      setMovies((prev) => (clear ? ranked : [...prev, ...ranked]));
-    } finally {
-      setLoading(false);
-    }
-  }, [mediaType, genreId, shuffleSeed, rankFetchedMovies]);
+    },
+    [mediaType, genreId, finalizeBatch]
+  );
 
-  // Reload movies when filters change or when shuffleSeed changes (important for lobby startup sync)
   useEffect(() => {
-    setPage(1);
-    loadMovies(1, true);
+    const timer = setTimeout(() => {
+      setPage(1);
+      setHasMore(true);
+      loadMovies(1, true);
+    }, 0);
+    return () => clearTimeout(timer);
   }, [mediaType, genreId, shuffleSeed, loadMovies]);
 
+  useEffect(() => {
+    if (prefetchFromIndex == null || movies.length === 0) return;
+    preloadPosterImages(movies, prefetchFromIndex + 1, 4);
+    if (hasMore && prefetchFromIndex >= movies.length - 5 && !loading) {
+      const nextPage = page + 1;
+      setTimeout(() => {
+        setPage(nextPage);
+        loadMovies(nextPage, false);
+      }, 0);
+    }
+  }, [prefetchFromIndex, movies, hasMore, loading, page, loadMovies]);
+
   const loadMore = () => {
+    if (!hasMore || loading) return;
     const nextPage = page + 1;
     setPage(nextPage);
     loadMovies(nextPage, false);
   };
 
-  return { movies, setMovies, genres, loading, error, loadMore };
+  return { movies, setMovies, genres, loading, error, loadMore, hasMore, catalogSource, page };
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import type { ContentItem } from '@/lib/tmdb/types';
+import type { ContentItem } from '@/lib/types/content';
 
 export function useSwipeDeck(
   initialMovies: ContentItem[],

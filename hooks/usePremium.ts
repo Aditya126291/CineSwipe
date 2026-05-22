@@ -48,23 +48,23 @@ export function usePremium(userId?: string) {
       safeSessionStorage.setItem('cineswipe-user-id', activeId);
     }
     
-    setResolvedUserId(activeId);
-
-    // 2. Check LocalStorage premium and swipe metrics
-    const localPremium = safeStorage.getItem('cineswipe-plus') === 'true';
-    setIsPremium(localPremium);
-
     const todayStr = new Date().toDateString();
     const storedDate = safeStorage.getItem('cineswipe-swipe-date');
     const storedCount = safeStorage.getItem('cineswipe-swipe-count');
+    const localPremium = safeStorage.getItem('cineswipe-plus') === 'true';
 
-    if (storedDate === todayStr && storedCount) {
-      setSwipeCount(parseInt(storedCount, 10));
-    } else {
-      safeStorage.setItem('cineswipe-swipe-date', todayStr);
-      safeStorage.setItem('cineswipe-swipe-count', '0');
-      setSwipeCount(0);
-    }
+    const timer = setTimeout(() => {
+      setResolvedUserId(activeId);
+      setIsPremium(localPremium);
+
+      if (storedDate === todayStr && storedCount) {
+        setSwipeCount(parseInt(storedCount, 10));
+      } else {
+        safeStorage.setItem('cineswipe-swipe-date', todayStr);
+        safeStorage.setItem('cineswipe-swipe-count', '0');
+        setSwipeCount(0);
+      }
+    }, 0);
 
     // 3. If Supabase is available, upsert/sync user profile in DB to prevent FK violations
     if (supabase && activeId) {
@@ -115,6 +115,7 @@ export function usePremium(userId?: string) {
 
       initUserProfile();
     }
+    return () => clearTimeout(timer);
   }, [userId]);
 
   const incrementSwipeCount = async () => {
@@ -154,7 +155,7 @@ export function usePremium(userId?: string) {
   };
 
   // Trigger Razorpay payment (fully customisable, fallbacks to simulated checkout if Keys are missing)
-  const triggerRazorpayCheckout = (onSuccess: () => void, onError: (err: any) => void) => {
+  const triggerRazorpayCheckout = (onSuccess: () => void, onError: (err: unknown) => void) => {
     const amount = 9900; // Rs. 99 (9900 paise)
     const currency = 'INR';
     
@@ -215,7 +216,7 @@ export function usePremium(userId?: string) {
           description: 'CineSwipe Premium Lifetime Unlock',
           image: '/favicon.ico',
           order_id: orderData.id,
-          handler: async function (response: any) {
+          handler: async function (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; }) {
             // Verify payment
             const verifyRes = await fetch('/api/payment/verify', {
               method: 'POST',
@@ -248,12 +249,12 @@ export function usePremium(userId?: string) {
           },
         };
 
-        const rzp = new (window as any).Razorpay(options);
-        rzp.on('payment.failed', function (resp: any) {
-          onError(resp.error);
+        const rzp = new (window as unknown as { Razorpay: new (options: unknown) => { open: () => void; on: (event: string, callback: (resp: { error: { description?: string } }) => void) => void } }).Razorpay(options);
+        rzp.on('payment.failed', function (resp: { error: { description?: string } }) {
+          onError(resp.error.description || 'Payment failed');
         });
         rzp.open();
-      } catch (err: any) {
+      } catch (err) {
         console.error('Razorpay initialization error:', err);
         // Simulated checkout for sandbox testing if server routes are not configured yet
         alert('Simulating premium payment bypass in sandbox mode...');

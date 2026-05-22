@@ -3,14 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Sparkles, Shield, ArrowLeft, Zap, Users, Heart, Film, Check, ArrowRight } from 'lucide-react';
+import { Sparkles, ArrowLeft, Zap, Users, Film, Check, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { usePremium } from '@/hooks/usePremium';
 import ThemeToggle from '@/components/ThemeToggle';
 
 export default function UpgradePage() {
   const router = useRouter();
-  const { isPremium, triggerRazorpayCheckout } = usePremium();
+  const { triggerRazorpayCheckout } = usePremium();
   const [loading, setLoading] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean>(false);
 

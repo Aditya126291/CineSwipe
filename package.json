@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node tests/qa_e2e.js && node tests/qa_e2e_features.js",
+    "test:catalog": "node tests/verify_catalog.js",
+    "test:recommendations": "node tests/verify_recommendations.js",
+    "debug:posters": "node tests/debug_posters.js",
+    "catalog:hydrate": "node scripts/catalog-hydrate.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.0",

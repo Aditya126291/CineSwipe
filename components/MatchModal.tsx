@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Sparkles, X, Tv, Film, Share2 } from 'lucide-react';
-import type { ContentItem } from '@/lib/tmdb/types';
+import { Heart, X, Share2 } from 'lucide-react';
+import type { ContentItem } from '@/lib/types/content';
 import ProviderIcons from './ProviderIcons';
 import confetti from 'canvas-confetti';
 
@@ -12,8 +12,6 @@ interface MatchModalProps {
   onClose: () => void;
   movie: ContentItem | null;
   matchReason?: string;
-  isPremium: boolean;
-  onUpgradePrompt: () => void;
 }
 
 export default function MatchModal({
@@ -21,8 +19,6 @@ export default function MatchModal({
   onClose,
   movie,
   matchReason,
-  isPremium,
-  onUpgradePrompt,
 }: MatchModalProps) {
   
   // Fire Canvas Confetti on Mount
@@ -37,7 +33,7 @@ export default function MatchModal({
         return Math.random() * (max - min) + min;
       };
 
-      const interval: any = setInterval(() => {
+      const interval = setInterval(() => {
         const timeLeft = animationEnd - Date.now();
 
         if (timeLeft <= 0) {

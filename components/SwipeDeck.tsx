@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, useMotionValue, useTransform, useAnimation, AnimatePresence } from 'framer-motion';
 import { Heart, X, Zap, Sparkles } from 'lucide-react';
-import type { ContentItem } from '@/lib/tmdb/types';
+import type { ContentItem } from '@/lib/types/content';
 import MovieCard from './MovieCard';
 
 interface SwipeDeckProps {
@@ -42,8 +42,9 @@ export default function SwipeDeck({
     : 0;
 
   useEffect(() => {
-    const handleSuperlike = (e: any) => {
-      const { username, contentId } = e.detail;
+    const handleSuperlike = (e: Event) => {
+      const customEvent = e as CustomEvent<{ username: string; contentId: number }>;
+      const { username, contentId } = customEvent.detail;
       setSuperlikeToast({ username, contentId });
       setTimeout(() => {
         setSuperlikeToast((prev) => (prev?.contentId === contentId ? null : prev));
@@ -67,7 +68,7 @@ export default function SwipeDeck({
 
   const isFlipped = flippedCardId === activeCard?.id;
 
-  const handleDragEnd = async (event: any, info: any) => {
+  const handleDragEnd = async (_event: unknown, info: import('framer-motion').PanInfo) => {
     // If the card is flipped, drag mechanics are locked
     if (isFlipped) return;
 
@@ -142,6 +143,8 @@ export default function SwipeDeck({
           <button
             onClick={undo}
             className="px-6 py-2.5 rounded-full bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm transition-all shadow-md active:scale-95"
+            aria-label="Undo last swipe"
+            data-testid="swipe-reel-undo-button"
           >
             Undo Last Swipe
           </button>
@@ -212,19 +215,26 @@ export default function SwipeDeck({
           </motion.div>
         )}
 
-        {/* Superlike Animation Toast */}
+        {/* Superlike Animation Toast (any card in deck — guests may be on same index in mock sync) */}
         <AnimatePresence>
-          {superlikeToast && superlikeToast.contentId === activeCard.id && (
-            <motion.div
-              initial={{ opacity: 0, y: -20, scale: 0.8 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              className="absolute top-10 inset-x-4 z-50 bg-amber-500/90 backdrop-blur-md text-white p-3 rounded-2xl font-black text-sm text-center shadow-xl border border-amber-400 flex items-center justify-center gap-2"
-            >
-              <Zap className="w-5 h-5 fill-current" />
-              {superlikeToast.username} superliked this {activeCard.mediaType === 'tv' ? 'show' : 'movie'}!
-            </motion.div>
-          )}
+          {superlikeToast && (() => {
+            const superlikedItem = movies.find((m) => m.id === superlikeToast.contentId);
+            const label = superlikedItem
+              ? (superlikedItem.mediaType === 'tv' ? 'show' : 'movie')
+              : 'title';
+            return (
+              <motion.div
+                key={superlikeToast.contentId}
+                initial={{ opacity: 0, y: -20, scale: 0.8 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                className="absolute top-10 inset-x-4 z-50 bg-amber-500/90 backdrop-blur-md text-white p-3 rounded-2xl font-black text-sm text-center shadow-xl border border-amber-400 flex items-center justify-center gap-2"
+              >
+                <Zap className="w-5 h-5 fill-current" />
+                {superlikeToast.username} superliked this {label}!
+              </motion.div>
+            );
+          })()}
         </AnimatePresence>
       </div>
 
@@ -236,6 +246,8 @@ export default function SwipeDeck({
             onClick={undo}
             className="w-12 h-12 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-navy-900/90 text-violet-600 dark:text-violet-400 hover:scale-110 active:scale-95 transition-all shadow-md flex items-center justify-center"
             title="Undo"
+            aria-label="Undo last swipe"
+            data-testid="swipe-undo-button"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
           </button>
@@ -246,6 +258,8 @@ export default function SwipeDeck({
           onClick={() => triggerButtonSwipe('dislike')}
           className="w-14 h-14 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-navy-900/90 text-rose-500 hover:text-rose-400 hover:scale-110 active:scale-95 transition-all shadow-md flex items-center justify-center"
           title="Dislike"
+          aria-label="Dislike movie"
+          data-testid="swipe-dislike-button"
         >
           <X className="w-6 h-6 stroke-[3]" />
         </button>
@@ -255,6 +269,8 @@ export default function SwipeDeck({
           onClick={() => triggerButtonSwipe('superlike')}
           className={`w-12 h-12 rounded-full border ${isPremium ? 'border-amber-500/30 text-amber-500 bg-amber-500/10 hover:text-amber-400' : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-navy-900/90 text-amber-500'} hover:scale-110 active:scale-95 transition-all shadow-md flex items-center justify-center`}
           title="Super Like"
+          aria-label="Superlike movie"
+          data-testid="swipe-superlike-button"
         >
           <Zap className="w-5 h-5 fill-current stroke-current" />
         </button>
@@ -264,6 +280,8 @@ export default function SwipeDeck({
           onClick={() => triggerButtonSwipe('like')}
           className="w-14 h-14 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-navy-900/90 text-emerald-500 hover:text-emerald-400 hover:scale-110 active:scale-95 transition-all shadow-md flex items-center justify-center"
           title="Like"
+          aria-label="Like movie"
+          data-testid="swipe-like-button"
         >
           <Heart className="w-6 h-6 stroke-[3] fill-current" />
         </button>

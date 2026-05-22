@@ -15,8 +15,8 @@ const fs = require('fs');
   await hostPage.waitForTimeout(5000);
   
   const html = await hostPage.content();
-  fs.writeFileSync('C:\\Users\\Aditya Kumar\\.gemini\\antigravity\\brain\\a28c4fa8-9a7c-488c-8d70-d794170bb04d/room_debug.html', html);
-  await hostPage.screenshot({ path: 'C:\\Users\\Aditya Kumar\\.gemini\\antigravity\\brain\\a28c4fa8-9a7c-488c-8d70-d794170bb04d/room_debug.png' });
+  fs.writeFileSync('C:\\Users\\Aditya Kumar\\.gemini\\antigravity\\brain\\a62575cf-4bd8-45a5-9856-6754518b2a49/room_debug.html', html);
+  await hostPage.screenshot({ path: 'C:\\Users\\Aditya Kumar\\.gemini\\antigravity\\brain\\a62575cf-4bd8-45a5-9856-6754518b2a49/room_debug.png' });
   console.log("Saved debug html and screenshot.");
   await browser.close();
 })();

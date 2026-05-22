@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowLeft, History, Sparkles, AlertTriangle, Eye, Video } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { preloadPosterImages } from '@/lib/catalog/preload';
+import { updateFeedWeights, penalizeFeedWeights, initializeWeights } from '@/lib/recommendations';
+import { ArrowLeft, History } from 'lucide-react';
 import Link from 'next/link';
 import { useMovies } from '@/hooks/useMovies';
 import { usePremium } from '@/hooks/usePremium';
 import { useSwipeDeck } from '@/hooks/useSwipeDeck';
-import { initializeWeights, updateFeedWeights } from '@/lib/recommendations';
 import ThemeToggle from '@/components/ThemeToggle';
 import SwipeCounter from '@/components/SwipeCounter';
 import GenreFilter from '@/components/GenreFilter';
@@ -16,8 +16,6 @@ import SwipeDeck from '@/components/SwipeDeck';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import SkeletonCard from '@/components/SkeletonCard';
 import AdBanner from '@/components/AdBanner';
-import type { ContentItem } from '@/lib/tmdb/types';
-
 export default function SoloSwipePage() {
   const [contentType, setContentType] = useState<'all' | 'movie' | 'tv'>('all');
   const [selectedGenreId, setSelectedGenreId] = useState<number | undefined>(undefined);
@@ -26,7 +24,7 @@ export default function SoloSwipePage() {
 
   // Core Hooks
   const { isPremium, swipesLeft, maxDailySwipes, incrementSwipeCount, triggerRazorpayCheckout } = usePremium();
-  const { movies, genres, loading, loadMore } = useMovies(contentType, selectedGenreId);
+  const { movies, genres, loading, loadMore, hasMore, catalogSource } = useMovies(contentType, selectedGenreId);
 
   const handleLimitExceeded = () => {
     setUpgradeOpen(true);
@@ -62,8 +60,8 @@ export default function SoloSwipePage() {
       if (storedWeights) {
         try {
           currentWeights = JSON.parse(storedWeights);
-        } catch (e) {
-          console.error('Failed to parse stored genre weights', e);
+        } catch {
+          console.error('Failed to parse stored genre weights');
         }
       }
       if (storedLastLiked) {
@@ -79,27 +77,28 @@ export default function SoloSwipePage() {
       try {
         historyStack = JSON.parse(storedHistory);
         if (!Array.isArray(historyStack)) historyStack = [];
-      } catch (e) {
+      } catch {
         historyStack = [];
       }
       historyStack.push({ weights: currentWeights, lastLikedGenre });
       localStorage.setItem('cineswipe-genre-weights-history', JSON.stringify(historyStack));
 
-      // Intercept solo likes and superlikes to update recommendation weights
+      const swipedMovie = movies.find((m) => m.id === movieId);
+
       if (direction === 'like' || direction === 'superlike') {
-        const swipedMovie = movies.find((m) => m.id === movieId);
         const primaryGenre = swipedMovie?.genreIds?.[0];
-
         if (primaryGenre) {
-          const newState = updateFeedWeights(
-            { weights: currentWeights, lastLikedGenre },
-            primaryGenre
-          );
-
+          const newState = updateFeedWeights({ weights: currentWeights, lastLikedGenre }, primaryGenre);
           localStorage.setItem('cineswipe-genre-weights', JSON.stringify(newState.weights));
           if (newState.lastLikedGenre !== null) {
             localStorage.setItem('cineswipe-last-liked-genre', newState.lastLikedGenre.toString());
           }
+        }
+      } else if (direction === 'dislike') {
+        const primaryGenre = swipedMovie?.genreIds?.[0];
+        if (primaryGenre) {
+          const newState = penalizeFeedWeights({ weights: currentWeights, lastLikedGenre }, primaryGenre);
+          localStorage.setItem('cineswipe-genre-weights', JSON.stringify(newState.weights));
         }
       }
     }
@@ -114,6 +113,14 @@ export default function SoloSwipePage() {
     swipe,
     undo,
   } = useSwipeDeck(movies, handleSwipeRecord, handleLimitExceeded);
+
+  useEffect(() => {
+    if (movies.length === 0) return;
+    preloadPosterImages(movies, currentIndex + 1, 4);
+    if (hasMore && currentIndex >= movies.length - 5 && !loading) {
+      loadMore();
+    }
+  }, [currentIndex, movies, hasMore, loading, loadMore]);
 
   const handleUndo = () => {
     // Restore previous weights from history if applicable
@@ -136,8 +143,8 @@ export default function SoloSwipePage() {
               localStorage.setItem('cineswipe-genre-weights-history', JSON.stringify(historyStack));
             }
           }
-        } catch (e) {
-          console.error('Failed to restore weights on undo', e);
+        } catch {
+          console.error('Failed to restore weights on undo');
         }
       }
     }
@@ -168,7 +175,14 @@ export default function SoloSwipePage() {
 
         {/* Dynamic limits & history drawer toggles */}
         <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
           <SwipeCounter swipesLeft={swipesLeft} maxSwipes={maxDailySwipes} isPremium={isPremium} />
+          {catalogSource !== 'unknown' && (
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+              Feed: {catalogSource}
+            </span>
+          )}
+        </div>
           
           <button
             onClick={() => setHistoryOpen(true)}

@@ -2,8 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import { safeStorage } from '@/lib/storage';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Sparkles, Film, History, Users, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Film, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useRoom } from '@/hooks/useRoom';
@@ -16,7 +15,7 @@ import MovieNightPlanner from '@/components/MovieNightPlanner';
 import MatchModal from '@/components/MatchModal';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import SkeletonCard from '@/components/SkeletonCard';
-import type { ContentItem } from '@/lib/tmdb/types';
+import type { ContentItem } from '@/lib/types/content';
 
 interface PageProps {
   params: Promise<{ code: string }>;
@@ -72,18 +71,22 @@ export default function RoomPage({ params }: PageProps) {
   // Assign random username & color initially
   useEffect(() => {
     const savedName = safeStorage.getItem('cineswipe-username');
-    if (savedName) {
-      setUsername(savedName);
-      setNameSaved(true);
-    } else {
-      const names = ['PopcornGuru', 'CinePhile', 'FlickFinder', 'ShowSurfer', 'ReelLover', 'FilmStar'];
-      const randomName = names[Math.floor(Math.random() * names.length)] + '_' + Math.floor(100 + Math.random() * 900);
-      setUsername(randomName);
-    }
-
     const colors = ['#7c3aed', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
-    setAvatarColor(randomColor);
+
+    const timer = setTimeout(() => {
+      if (savedName) {
+        setUsername(savedName);
+        setNameSaved(true);
+      } else {
+        const names = ['PopcornGuru', 'CinePhile', 'FlickFinder', 'ShowSurfer', 'ReelLover', 'FilmStar'];
+        const randomName = names[Math.floor(Math.random() * names.length)] + '_' + Math.floor(100 + Math.random() * 900);
+        setUsername(randomName);
+      }
+      setAvatarColor(randomColor);
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const handleSaveName = () => {
@@ -254,8 +257,6 @@ export default function RoomPage({ params }: PageProps) {
         onClose={() => setMatchOpen(false)}
         movie={matchedMovie}
         matchReason={matchReason}
-        isPremium={isPremium}
-        onUpgradePrompt={() => setUpgradeOpen(true)}
       />
 
       {/* Upgrade pricing dialog */}

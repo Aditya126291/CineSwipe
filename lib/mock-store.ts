@@ -2,7 +2,7 @@
 // This allows phone & desktop to sync perfectly in mock mode without Supabase environment variables!
 
 import type { Room, RoomMember, Swipe } from '@/lib/supabase/types';
-import type { ContentItem } from '@/lib/tmdb/types';
+import type { ContentItem } from '@/lib/types/content';
 
 interface MockRoomData {
   room: Room;
@@ -12,14 +12,14 @@ interface MockRoomData {
   isSwipingStarted: boolean;
 }
 
-const globalStore = global as any;
+const globalStore = global as typeof globalThis & { mockRooms?: Map<string, MockRoomData> };
 if (!globalStore.mockRooms) {
   globalStore.mockRooms = new Map<string, MockRoomData>();
 }
 
 export const mockStore = {
   getRoom(code: string): MockRoomData | undefined {
-    return globalStore.mockRooms.get(code.toUpperCase());
+    return globalStore.mockRooms!.get(code.toUpperCase());
   },
 
   createRoom(code: string, userId: string, isPremium: boolean): MockRoomData {
@@ -38,7 +38,7 @@ export const mockStore = {
       movies: {},
       isSwipingStarted: false,
     };
-    globalStore.mockRooms.set(cleanCode, newRoom);
+    globalStore.mockRooms!.set(cleanCode, newRoom);
     return newRoom;
   },
 
@@ -85,16 +85,18 @@ export const mockStore = {
       roomData.movies[movie.id] = movie;
     }
 
-    // Check for duplicates
-    const exists = roomData.swipes.some(
+    const existingIndex = roomData.swipes.findIndex(
       (s) => s.user_id === swipe.user_id && s.content_id === swipe.content_id
     );
-    if (!exists) {
-      roomData.swipes.push({
-        id: `swipe-uuid-${Date.now()}-${Math.random()}`,
-        ...swipe,
-        swiped_at: new Date().toISOString(),
-      });
+    const swipeRecord: Swipe = {
+      id: `swipe-uuid-${Date.now()}-${Math.random()}`,
+      ...swipe,
+      swiped_at: new Date().toISOString(),
+    };
+    if (existingIndex >= 0) {
+      roomData.swipes[existingIndex] = swipeRecord;
+    } else {
+      roomData.swipes.push(swipeRecord);
     }
   },
 
@@ -110,6 +112,13 @@ export const mockStore = {
     if (!roomData) return [];
 
     this.cleanInactiveMembers(code);
-    return Object.values(roomData.members).map(({ lastHeartbeat, ...m }) => m);
+    return Object.values(roomData.members).map((member) => ({
+      room_id: member.room_id,
+      user_id: member.user_id,
+      username: member.username,
+      avatar_color: member.avatar_color,
+      is_premium: member.is_premium,
+      joined_at: member.joined_at,
+    }));
   }
 };

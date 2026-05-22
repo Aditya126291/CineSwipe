@@ -5,7 +5,8 @@ const fs = require('fs');
   console.log("Starting QA test suite...");
   
   const browser = await chromium.launch({ headless: true });
-  const artifactsDir = "C:\\Users\\Aditya Kumar\\.gemini\\antigravity\\brain\\a28c4fa8-9a7c-488c-8d70-d794170bb04d";
+  const artifactsDir = path.join(__dirname, 'artifacts');
+  fs.mkdirSync(artifactsDir, { recursive: true });
   
   try {
     const hostContext = await browser.newContext();

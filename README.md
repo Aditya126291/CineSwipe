@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CineSwipe
 
-## Getting Started
+Swipe movies and web series solo or in real-time multiplayer rooms. Built with Next.js 16 App Router, React 19, Tailwind v4, Supabase, TMDB, and Razorpay.
 
-First, run the development server:
+**Last verified:** 2026-05-21
+
+## Quick start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev          # http://localhost:3000
+npm run lint         # 0 errors (warnings only)
+npm run build
+npx playwright install chromium   # first-time E2E
+npm test             # requires dev server running
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Optional | Enables Supabase + Realtime mode |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Optional | Supabase client |
+| `NEXT_PUBLIC_TMDB_API_KEY` | Optional | Live catalog from TMDB |
+| `NEXT_PUBLIC_RAZORPAY_KEY_ID` | Optional | Checkout UI |
+| `RAZORPAY_KEY_SECRET` | Optional | Server payment verify |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Without Supabase env vars, multiplayer uses in-memory mock APIs under `/api/rooms/*`.
 
-## Learn More
+## Repository map
 
-To learn more about Next.js, take a look at the following resources:
+| Folder | README | Responsibility |
+| --- | --- | --- |
+| [`app/`](app/README.md) | Yes | Routes, layouts, API handlers |
+| [`components/`](components/README.md) | Yes | UI (swipe deck, lobby, modals) |
+| [`hooks/`](hooks/README.md) | Yes | Client state and side effects |
+| [`lib/`](lib/README.md) | Yes | Shared logic, TMDB, Supabase, validation |
+| [`public/`](public/README.md) | Yes | Static assets, PWA manifest |
+| [`tests/`](tests/README.md) | Yes | Playwright QA scripts |
+| [`Architecture.md`](Architecture.md) | — | System-wide architecture and QA plan |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Runtime modes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```mermaid
+flowchart LR
+  env[Env vars present?]
+  env -->|No Supabase| mock[Mock rooms + local content]
+  env -->|Supabase OK| live[Supabase + Realtime]
+  env -->|Supabase down| fallback[forceMockFallback in useRoom]
+```
 
-## Deploy on Vercel
+Content precedence in `useMovies`: Supabase `movies_catalog` → TMDB → `lib/tmdb/mock-data`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Verified QA (2026-05-21)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Check | Result |
+| --- | --- |
+| `npm run build` | Pass |
+| `npm run lint` | Pass (0 errors, warnings only) |
+| `npm run dev` | Pass at localhost:3000 |
+| Room API validation | `^[A-Z0-9]{6}$`, 409 on duplicate |
+| Payment verify | Requires fields; dev mock needs sandbox shape |
+
+## Known global issues
+
+1. **Lint warnings** — unused imports resolved in pages; `useRoom` hook dependency warnings may remain.
+2. **Supabase catalog** — `movies_catalog` added to [`lib/supabase/schema.sql`](lib/supabase/schema.sql); must be applied in Supabase SQL editor.
+3. **E2E tests** — require `npm run dev` + `npx playwright install chromium`.
+4. **Mock rooms** — lost on server restart (`lib/mock-store.ts`).
+
+## Agent workflow
+
+1. Read the README in the folder you are changing.
+2. Implement fixes; run folder verification checklist.
+3. Re-run `npm run lint`, `npm run build`, and relevant tests.
+4. Update [`Architecture.md`](Architecture.md) and bump **Last verified** when all gates pass.
+
+## After successful execution
+
+Update `Architecture.md` sections 1–3 and QA tables. Set `Last verified: YYYY-MM-DD` at the top of that file.

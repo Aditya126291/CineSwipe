@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Play, X, Eye, Film, Sparkles, AlertCircle } from 'lucide-react';
-import type { ContentItem } from '@/lib/tmdb/types';
+import { motion } from 'framer-motion';
+import { Star, Play, X, Film, Sparkles, AlertCircle } from 'lucide-react';
+import type { ContentItem } from '@/lib/types/content';
 import ProviderIcons from './ProviderIcons';
 
 interface MovieCardProps {
@@ -52,7 +52,6 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
 
   const handlePosterError = () => {
     if (movie.posterUrl && currentPosterRetry < 3) {
-      console.log(`Poster failed to load for "${movie.title}". Retrying (${currentPosterRetry + 1}/3)`);
       setTimeout(() => {
         setPosterRetryCount((prev) => ({
           ...prev,
@@ -60,10 +59,7 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
         }));
       }, 600);
     } else {
-      setPosterRetryCount((prev) => ({
-        ...prev,
-        [movie.id]: 3,
-      }));
+      setPosterRetryCount((prev) => ({ ...prev, [movie.id]: 3 }));
     }
   };
 
@@ -84,12 +80,21 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
     }
   };
 
+  useEffect(() => {
+    setTimeout(() => {
+      setPosterRetryCount({});
+    }, 0);
+  }, [movie.id]);
+
   // Stop video when card flips back or unmounts
   useEffect(() => {
-    if (!isFlipped) {
-      setIsPlaying(false);
+    if (!isFlipped && isPlaying) {
+      const timer = setTimeout(() => {
+        setIsPlaying(false);
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [isFlipped]);
+  }, [isFlipped, isPlaying]);
 
   const handleCardClick = (e: React.MouseEvent) => {
     // Avoid flipping when clicking inside interactive items
@@ -165,6 +170,8 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
                 onFlip(true);
               }}
               className="no-flip absolute bottom-4 right-4 animate-float flex items-center gap-1 text-[10px] font-bold text-white bg-black/60 border border-white/15 px-2.5 py-1 rounded-full backdrop-blur-md cursor-pointer hover:bg-black/80 transition-all active:scale-95 z-20"
+              aria-label="Show trailer details and flip card"
+              data-testid="card-flip-button"
             >
               <Play className="w-3 h-3 fill-white" /> Tap to Watch Trailer
             </button>
@@ -222,6 +229,7 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
                   onClick={handleTrailerStop}
                   className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 border border-white/20 text-white hover:bg-black transition-all"
                   aria-label="Stop video"
+                  data-testid="trailer-stop-button"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -244,6 +252,7 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
                     onClick={handleTrailerPlay}
                     className="p-4 rounded-full bg-violet-600/90 text-white border border-violet-400 hover:scale-110 active:scale-95 transition-all shadow-lg shadow-violet-500/30 flex items-center justify-center z-10"
                     aria-label="Play Trailer"
+                    data-testid="trailer-play-button"
                   >
                     <Play className="w-8 h-8 fill-white ml-1" />
                   </button>
@@ -281,6 +290,9 @@ export default function MovieCard({ movie, isFlipped, onFlip, isPremium, onUpgra
                     e.stopPropagation();
                     onUpgradePrompt();
                   }}
+                  role="button"
+                  aria-label="Unlock deep stream links with CineSwipe+"
+                  data-testid="card-upgrade-button"
                   className="no-flip mt-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between gap-3 text-amber-400 hover:bg-amber-500/15 active:scale-98 transition-all"
                 >
                   <div className="flex items-center gap-2 text-left">

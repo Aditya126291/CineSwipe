@@ -1,14 +1,14 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, Zap, Heart, Check, Users, Film, ArrowRight } from 'lucide-react';
+import { X, Sparkles, Zap, Check, Users, Film, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
 
 interface UpgradePromptProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  triggerRazorpay: (onSuccess: () => void, onError: (err: any) => void) => void;
+  triggerRazorpay: (onSuccess: () => void, onError: (err: unknown) => void) => void;
 }
 
 export default function UpgradePrompt({ isOpen, onClose, onSuccess, triggerRazorpay }: UpgradePromptProps) {
