@@ -19,6 +19,14 @@ const { chromium } = require('playwright');
     const guest1Page = await guest1Context.newPage();
     const guest2Page = await guest2Context.newPage();
     const guest3Page = await guest3Context.newPage();
+
+    hostPage.on('console', msg => console.log('[Host Console]', msg.text()));
+    guest1Page.on('console', msg => console.log('[Guest1 Console]', msg.text()));
+    guest2Page.on('console', msg => console.log('[Guest2 Console]', msg.text()));
+    
+    hostPage.on('pageerror', err => console.error('[Host Error]', err.message));
+    guest1Page.on('pageerror', err => console.error('[Guest1 Error]', err.message));
+    guest2Page.on('pageerror', err => console.error('[Guest2 Error]', err.message));
     
     // ---------------------------------------------------------
     // 1. Room Creation
@@ -40,7 +48,7 @@ const { chromium } = require('playwright');
     await hostPage.click('button:has-text("Confirm Nickname")');
     
     // Wait for the lobby to load
-    await hostPage.waitForSelector('text=Party Access Code', { timeout: 10000 });
+    await hostPage.waitForSelector('text=Party Ticket Code', { timeout: 10000 });
     
     // ---------------------------------------------------------
     // 2. Guests 1 and 2 joining
@@ -57,7 +65,7 @@ const { chromium } = require('playwright');
       await page.waitForSelector('button:has-text("Confirm Nickname")');
       await page.click('button:has-text("Confirm Nickname")');
       
-      await page.waitForSelector('text=Party Access Code', { timeout: 10000 });
+      await page.waitForSelector('text=Party Ticket Code', { timeout: 10000 });
       console.log(`Guest ${guestNum} joined!`);
     };
     

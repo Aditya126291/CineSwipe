@@ -1,5 +1,6 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
+const path = require('path');
 
 (async () => {
   console.log("Starting QA test suite...");
@@ -42,7 +43,7 @@ const fs = require('fs');
     await hostPage.fill('input[type="text"]', 'HostQA');
     await hostPage.click('button:has-text("Confirm Nickname")');
     
-    await hostPage.waitForSelector('text=Party Access Code', { timeout: 10000 });
+    await hostPage.waitForSelector('text=Party Ticket Code', { timeout: 10000 });
     
     // ---------------------------------------------------------
     // 2. Guests 1 and 2 joining
@@ -59,7 +60,7 @@ const fs = require('fs');
       await page.fill('input[type="text"]', nickname);
       await page.click('button:has-text("Confirm Nickname")');
       
-      await page.waitForSelector('text=Party Access Code', { timeout: 10000 });
+      await page.waitForSelector('text=Party Ticket Code', { timeout: 10000 });
       console.log(`Guest ${guestNum} joined!`);
     };
     
