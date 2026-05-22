@@ -72,46 +72,47 @@ export default function MatchModal({
           {/* Glass backdrop filter */}
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.85 }}
+            animate={{ opacity: 0.9 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-navy-950/90 backdrop-blur-lg z-[100]"
+            className="fixed inset-0 bg-navy-950/95 backdrop-blur-md z-[100]"
           />
 
           {/* Celebration modal container */}
-          <div className="fixed inset-0 flex items-center justify-center p-4 z-[101] overflow-y-auto">
+          <div className="fixed inset-0 flex items-center justify-center p-4 z-[101] overflow-y-auto select-none">
             <motion.div
               initial={{ scale: 0.8, opacity: 0, rotate: -2 }}
               animate={{ scale: 1, opacity: 1, rotate: 0 }}
               exit={{ scale: 0.8, opacity: 0, rotate: 2 }}
-              transition={{ type: 'spring', damping: 20, stiffness: 180 }}
-              className="w-full max-w-sm rounded-3xl border border-violet-500/30 bg-gradient-to-b from-navy-900 to-navy-950 p-6 text-white shadow-2xl relative flex flex-col items-center overflow-hidden"
+              transition={{ type: 'spring', damping: 22, stiffness: 190 }}
+              className="w-full max-w-sm rounded-[32px] border border-violet-500/40 bg-gradient-to-b from-navy-900/90 to-navy-950/95 p-7 md:p-8 text-white shadow-2xl relative flex flex-col items-center overflow-hidden"
             >
-              {/* Radial glow backdrop */}
-              <div className="absolute top-0 w-72 h-72 rounded-full bg-violet-600/10 blur-[60px] pointer-events-none" />
+              {/* Decorative radial glows */}
+              <div className="absolute -top-24 w-72 h-72 rounded-full bg-violet-600/15 blur-[60px] pointer-events-none" />
+              <div className="absolute -bottom-24 w-72 h-72 rounded-full bg-coral-500/10 blur-[60px] pointer-events-none" />
 
               {/* Close Button */}
               <button
                 onClick={onClose}
-                className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-all"
+                className="absolute top-5 right-5 p-2 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-all duration-300 cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 stroke-[2.5]" />
               </button>
 
-              {/* Celebrating Badges */}
-              <div className="flex items-center gap-1 bg-violet-500/20 text-violet-300 px-3 py-1.5 rounded-full text-xs font-black tracking-wider uppercase border border-violet-500/30 animate-pulse-glow mb-4">
-                <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
+              {/* Celebrating Match Reason Badge */}
+              <div className="flex items-center gap-1.5 bg-gradient-to-r from-violet-600/30 to-coral-500/30 text-white px-3.5 py-1.5 rounded-full text-[10px] font-black tracking-wider uppercase border border-violet-400/30 animate-pulse-glow mb-4 shadow-lg shadow-violet-500/10 glow-violet">
+                <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" />
                 {matchReason || "It's a Match!"}
               </div>
 
-              <h2 className="text-3xl font-black text-center leading-none mb-1 tracking-tight">
+              <h2 className="text-3xl font-black text-center leading-none mb-1 tracking-tight bg-gradient-to-r from-violet-400 via-coral-400 to-amber-300 bg-clip-text text-transparent">
                 IT&apos;S A MATCH!
               </h2>
-              <p className="text-[10px] text-zinc-400 text-center mb-6">
-                You all swiped Liked on this title. Ready to watch?
+              <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider text-center mb-6">
+                Everyone swiped right on this title. Ready to watch?
               </p>
 
-              {/* Matched Poster Aspect */}
-              <div className="w-44 aspect-[2/3] rounded-2xl overflow-hidden border-2 border-violet-500/30 shadow-2xl relative mb-6 glow-violet animate-float">
+              {/* Matched Poster with glow */}
+              <div className="w-44 aspect-[2/3] rounded-2xl overflow-hidden border-2 border-violet-500/40 shadow-2xl relative mb-6 glow-violet animate-float">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={movie.posterUrl || '/poster-placeholder.svg'}
@@ -126,38 +127,39 @@ export default function MatchModal({
               </div>
 
               {/* Movie Title & Info */}
-              <h3 className="text-xl font-extrabold text-center mb-1">{movie.title}</h3>
-              <div className="flex items-center gap-2 text-xs text-zinc-400 font-medium mb-4">
+              <h3 className="text-xl font-black tracking-tight text-center mb-1">{movie.title}</h3>
+              <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-black uppercase tracking-wider mb-4">
                 <span>{movie.releaseYear}</span>
                 <span>•</span>
-                <span className="capitalize">{movie.mediaType}</span>
+                <span>{movie.mediaType}</span>
                 <span>•</span>
-                <span className="text-amber-500 flex items-center gap-0.5 font-bold">
+                <span className="text-amber-500 flex items-center gap-0.5">
                   ★ {movie.rating}
                 </span>
               </div>
 
-              {/* Direct provider streaming options */}
-              <div className="w-full py-4 border-y border-white/10 mb-6 flex justify-center text-center">
-                <ProviderIcons providers={movie.providers} />
+              {/* Direct streaming provider options */}
+              <div className="w-full py-4 border-y border-white/10 mb-6 flex flex-col items-center gap-2">
+                <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500">Available to Stream On</span>
+                <div className="flex justify-center text-center">
+                  <ProviderIcons providers={movie.providers} />
+                </div>
               </div>
 
               {/* Action Buttons */}
               <div className="w-full space-y-3">
                 <button
                   onClick={onClose}
-                  className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-500 active:scale-[0.98] font-bold text-xs tracking-wider uppercase transition-all shadow-md shadow-violet-600/20"
+                  className="w-full py-4 rounded-xl bg-gradient-to-r from-violet-600 to-coral-500 hover:scale-[1.02] hover:shadow-xl hover:shadow-violet-600/20 active:scale-[0.98] text-white font-black text-xs tracking-widest uppercase transition-all duration-300 shadow-md shadow-violet-600/20 cursor-pointer"
                 >
                   🍿 Keep Surfing
                 </button>
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleShare}
-                    className="flex-1 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 active:scale-[0.98] font-bold text-xs transition-all flex items-center justify-center gap-2"
-                  >
-                    <Share2 className="w-4 h-4" /> Share Match
-                  </button>
-                </div>
+                <button
+                  onClick={handleShare}
+                  className="w-full py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/15 active:scale-[0.98] font-black text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Share2 className="w-3.5 h-3.5" /> Share Match
+                </button>
               </div>
             </motion.div>
           </div>
@@ -166,3 +168,4 @@ export default function MatchModal({
     </AnimatePresence>
   );
 }
+

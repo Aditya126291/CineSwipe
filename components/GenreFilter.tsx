@@ -34,17 +34,17 @@ export default function GenreFilter({
       {/* Horizontally scrolling pill filter list */}
       <div
         ref={containerRef}
-        className="flex items-center gap-2 overflow-x-auto hide-scrollbar scroll-smooth px-1"
+        className="flex items-center gap-2 overflow-x-auto hide-scrollbar scroll-smooth px-1 py-1"
       >
         <button
           onClick={() => handleGenreClick(undefined)}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 border whitespace-nowrap ${
+          className={`px-4 py-2 rounded-full text-xs font-black tracking-wide uppercase transition-all duration-300 border whitespace-nowrap cursor-pointer hover:scale-105 active:scale-95 ${
             selectedGenreId === undefined
-              ? 'bg-violet-600 border-violet-500 text-white shadow-md shadow-violet-500/25 glow-violet'
-              : 'bg-white dark:bg-navy-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-700'
+              ? 'bg-gradient-to-r from-violet-600 to-coral-500 border-violet-500/30 text-white shadow-lg shadow-violet-500/20 glow-violet'
+              : 'bg-white/5 dark:bg-navy-950/40 border-zinc-200/50 dark:border-white/5 text-zinc-700 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:border-zinc-300 dark:hover:border-white/15 backdrop-blur-md'
           }`}
         >
-          🍿 All Genres
+          🍿 All
         </button>
 
         {genres.map((g, idx) => {
@@ -55,15 +55,15 @@ export default function GenreFilter({
             <button
               key={g.id}
               onClick={() => handleGenreClick(g.id, idx)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 border flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+              className={`px-4 py-2 rounded-full text-xs font-black tracking-wide uppercase transition-all duration-300 border flex items-center gap-1.5 whitespace-nowrap cursor-pointer hover:scale-105 active:scale-95 ${
                 isSelected
-                  ? 'bg-violet-600 border-violet-500 text-white shadow-md shadow-violet-500/25 glow-violet'
-                  : 'bg-white dark:bg-navy-900 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:border-zinc-300 dark:hover:border-zinc-700'
+                  ? 'bg-gradient-to-r from-violet-600 to-coral-500 border-violet-500/30 text-white shadow-lg shadow-violet-500/20 glow-violet'
+                  : 'bg-white/5 dark:bg-navy-950/40 border-zinc-200/50 dark:border-white/5 text-zinc-700 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-white hover:border-zinc-300 dark:hover:border-white/15 backdrop-blur-md'
               }`}
             >
               {g.name}
               {isLocked && (
-                <span className="p-0.5 rounded-full bg-amber-500/10 text-amber-500">
+                <span className="p-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/20">
                   <Lock className="w-2.5 h-2.5" />
                 </span>
               )}
@@ -74,12 +74,13 @@ export default function GenreFilter({
         {!isPremium && (
           <button
             onClick={onUpgradePrompt}
-            className="px-4 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-amber-500/10 to-amber-600/15 border border-amber-500/30 text-amber-500 flex items-center gap-1 whitespace-nowrap animate-pulse-glow"
+            className="px-4 py-2 rounded-full text-xs font-black tracking-wide uppercase bg-gradient-to-r from-amber-500/20 to-amber-600/35 border border-amber-500/40 text-amber-400 flex items-center gap-1.5 whitespace-nowrap hover:scale-105 active:scale-95 transition-all duration-300 shadow-md shadow-amber-500/10 cursor-pointer animate-pulse-glow"
           >
-            <Sparkles className="w-3.5 h-3.5 fill-amber-500" /> Unlock More
+            <Sparkles className="w-3.5 h-3.5 fill-amber-500/30 text-amber-400" /> Unlock More
           </button>
         )}
       </div>
     </div>
   );
 }
+

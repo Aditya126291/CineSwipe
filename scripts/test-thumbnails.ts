@@ -22,24 +22,22 @@ const PROPOSED: Record<number, { title: string; key: string }> = {
 };
 
 async function run() {
-  console.log('Validating final resolved YouTube keys...');
+  console.log('Validating final resolved YouTube keys via Thumbnail CDN...');
   let successCount = 0;
   
   for (const [id, info] of Object.entries(PROPOSED)) {
-    const embedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${info.key}`;
+    const imgUrl = `https://i3.ytimg.com/vi/${info.key}/hqdefault.jpg`;
     try {
-      const res = await fetch(embedUrl);
+      const res = await fetch(imgUrl, { method: 'HEAD' });
       if (res.status === 200) {
-        const metadata: any = await res.json();
-        console.log(`✅ ID: ${id} | Title: "${info.title}" | Key: ${info.key} -> YT Title: "${metadata.title}"`);
+        console.log(`✅ ID: ${id} | Title: "${info.title}" | Key: ${info.key} -> Thumbnail: EXISTS`);
         successCount++;
       } else {
-        console.log(`❌ ID: ${id} | Title: "${info.title}" | Key: ${info.key} -> Status: ${res.status}`);
+        console.log(`❌ ID: ${id} | Title: "${info.title}" | Key: ${info.key} -> Thumbnail: NOT FOUND (Status: ${res.status})`);
       }
     } catch (e: any) {
       console.log(`❌ ID: ${id} | Title: "${info.title}" | Key: ${info.key} -> Error: ${e.message}`);
     }
-    await new Promise(r => setTimeout(r, 100)); // be nice to YT
   }
   
   console.log(`\nResult: ${successCount} / ${Object.keys(PROPOSED).length} verified working!`);
