@@ -1,18 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Sparkles, ArrowLeft, Zap, Users, Film, Check, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { usePremium } from '@/hooks/usePremium';
 import ThemeToggle from '@/components/ThemeToggle';
+import { getClientRegion } from '@/lib/catalog/providers-geo';
 
 export default function UpgradePage() {
   const router = useRouter();
   const { triggerRazorpayCheckout } = usePremium();
   const [loading, setLoading] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean>(false);
+  const [region, setRegion] = useState<string>('IN');
+
+  useEffect(() => {
+    setRegion(getClientRegion());
+  }, []);
 
   const handleUpgrade = () => {
     setLoading(true);
@@ -123,16 +129,29 @@ export default function UpgradePage() {
                     Lifetime Premium
                   </span>
                   
-                  <div className="flex items-baseline gap-1 mt-6">
-                    <span className="text-5xl font-black tracking-tight text-white">
-                      ₹99
-                    </span>
+                  <div className="flex items-baseline gap-2 mt-6">
+                    {region === 'IN' ? (
+                      <>
+                        <span className="text-2xl font-bold text-zinc-500 line-through mr-2">
+                          $3
+                        </span>
+                        <span className="text-5xl font-black tracking-tight text-white">
+                          ₹99
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-5xl font-black tracking-tight text-white">
+                        $3
+                      </span>
+                    )}
                     <span className="text-xs font-black tracking-widest uppercase text-zinc-400">
                       / One-Time
                     </span>
                   </div>
                   <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400 mt-1.5">
-                    Equivalent to USD $2 • Pay once, use forever
+                    {region === 'IN'
+                      ? 'Special regional launch price • Pay once, use forever'
+                      : 'Lifetime access pass • Pay once, use forever'}
                   </span>
 
                   {/* Payment Verification list */}

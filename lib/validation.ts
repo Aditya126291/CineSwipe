@@ -224,6 +224,15 @@ export function validateCreateOrderPayload(body: unknown) {
     return { valid: false, error: 'Currency must be INR or USD' };
   }
 
+  // Strict pricing security locks to prevent backdoor price tempering
+  if (currency === 'INR' && amount !== 9900) {
+    return { valid: false, error: 'Security alert: Invalid premium order amount' };
+  }
+
+  if (currency === 'USD' && amount !== 300) {
+    return { valid: false, error: 'Security alert: Invalid premium order amount' };
+  }
+
   return {
     valid: true,
     parsed: {

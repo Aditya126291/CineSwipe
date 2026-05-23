@@ -5,15 +5,28 @@ import { validateCreateOrderPayload } from '@/lib/validation';
 
 export async function POST(request: Request) {
   try {
-    const rawBody = await request.json();
-    
-    // Applied Declarative Input Schema Boundary Verification Pattern (Pillar 3)
-    const validation = validateCreateOrderPayload(rawBody);
-    if (!validation.valid) {
-      return NextResponse.json({ error: validation.error }, { status: 400 });
+    const { amount, currency } = await request.json();
+
+    if (amount === undefined || amount === null) {
+      return NextResponse.json({ error: 'Amount is required' }, { status: 400 });
     }
 
-    const { amount, currency } = validation.parsed!;
+    if (typeof amount !== 'number' || amount <= 0 || !Number.isInteger(amount)) {
+      return NextResponse.json({ error: 'Amount must be a positive integer representing paise' }, { status: 400 });
+    }
+
+    if (currency !== 'INR' && currency !== 'USD') {
+      return NextResponse.json({ error: 'Currency must be INR or USD' }, { status: 400 });
+    }
+
+    // Strict pricing security locks to prevent backdoor price tempering
+    if (currency === 'INR' && amount !== 9900) {
+      return NextResponse.json({ error: 'Security alert: Invalid premium order amount' }, { status: 400 });
+    }
+
+    if (currency === 'USD' && amount !== 300) {
+      return NextResponse.json({ error: 'Security alert: Invalid premium order amount' }, { status: 400 });
+    }
 
     const key_id = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID;
     const key_secret = process.env.RAZORPAY_KEY_SECRET;
