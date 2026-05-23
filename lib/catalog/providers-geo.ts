@@ -242,13 +242,7 @@ export const PROVIDER_GEO_DICTIONARY: Record<number, Record<string, ProviderLink
 export function getClientRegion(): Region {
   if (typeof window === 'undefined') return 'IN'; // Safe build-time fallback
   try {
-    // 1. Session storage override for testing
-    const override = sessionStorage.getItem('cineswipe-geo-override');
-    if (override === 'US' || override === 'IN' || override === 'GLOBAL') {
-      return override as Region;
-    }
-
-    // 2. Check URL parameters for override
+    // 1. Check URL parameters for override (explicit URL query params take precedence!)
     if (window.location.search) {
       const params = new URLSearchParams(window.location.search);
       const geo = params.get('geo')?.toUpperCase();
@@ -256,6 +250,12 @@ export function getClientRegion(): Region {
         sessionStorage.setItem('cineswipe-geo-override', geo);
         return geo as Region;
       }
+    }
+
+    // 2. Session storage override for testing
+    const override = sessionStorage.getItem('cineswipe-geo-override');
+    if (override === 'US' || override === 'IN' || override === 'GLOBAL') {
+      return override as Region;
     }
 
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;

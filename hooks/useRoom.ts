@@ -38,6 +38,16 @@ export function useRoom(
   const superlikeTrackerRef = useRef<Set<string>>(new Set());
   const [forceMockFallback, setForceMockFallback] = useState(false);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('mock') === 'true' || sessionStorage.getItem('cineswipe-mock-override') === 'true') {
+        sessionStorage.setItem('cineswipe-mock-override', 'true');
+        setForceMockFallback(true);
+      }
+    }
+  }, []);
+
   const membersRef = useRef<RoomMember[]>([]);
   useEffect(() => {
     membersRef.current = members;
