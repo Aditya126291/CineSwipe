@@ -184,7 +184,29 @@ export async function POST(request: Request) {
               };
             });
 
-            candidatePool.push(...tvmazeItems);
+             candidatePool.push(...tvmazeItems);
+
+            // Self-seeding database: programmatically write TVMaze shows straight into Supabase database catalog
+            if (supabase && tvmazeItems.length > 0) {
+              try {
+                const dbRows = tvmazeItems.map(item => ({
+                  id: item.id,
+                  title: item.title,
+                  overview: item.overview,
+                  rating: item.rating,
+                  vote_count: item.voteCount,
+                  media_type: item.mediaType,
+                  release_year: item.releaseYear,
+                  poster_url: item.posterUrl,
+                  backdrop_url: item.backdropUrl,
+                  genres: item.genreIds,
+                  providers: item.providers
+                }));
+                await supabase.from('movies_catalog').upsert(dbRows, { onConflict: 'id' });
+              } catch (dbUpsertErr) {
+                console.error('[Database Cache] Failed to seed TVMaze items:', dbUpsertErr);
+              }
+            }
           }
         }
       } catch (err) {
@@ -249,6 +271,28 @@ export async function POST(request: Request) {
                 };
               });
               widerPool.push(...tvmazeItems);
+
+              // Self-seeding database: programmatically write TVMaze shows straight into Supabase database catalog
+              if (supabase && tvmazeItems.length > 0) {
+                try {
+                  const dbRows = tvmazeItems.map(item => ({
+                    id: item.id,
+                    title: item.title,
+                    overview: item.overview,
+                    rating: item.rating,
+                    vote_count: item.voteCount,
+                    media_type: item.mediaType,
+                    release_year: item.releaseYear,
+                    poster_url: item.posterUrl,
+                    backdrop_url: item.backdropUrl,
+                    genres: item.genreIds,
+                    providers: item.providers
+                  }));
+                  await supabase.from('movies_catalog').upsert(dbRows, { onConflict: 'id' });
+                } catch (dbUpsertErr) {
+                  console.error('[Database Cache] Failed to seed TVMaze items:', dbUpsertErr);
+                }
+              }
             }
           }
         } catch (err) {
