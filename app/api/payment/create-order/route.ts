@@ -1,21 +1,19 @@
 import { NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 
+import { validateCreateOrderPayload } from '@/lib/validation';
+
 export async function POST(request: Request) {
   try {
-    const { amount, currency } = await request.json();
-
-    if (amount === undefined || amount === null) {
-      return NextResponse.json({ error: 'Amount is required' }, { status: 400 });
+    const rawBody = await request.json();
+    
+    // Applied Declarative Input Schema Boundary Verification Pattern (Pillar 3)
+    const validation = validateCreateOrderPayload(rawBody);
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    if (typeof amount !== 'number' || amount <= 0 || !Number.isInteger(amount)) {
-      return NextResponse.json({ error: 'Amount must be a positive integer representing paise' }, { status: 400 });
-    }
-
-    if (currency !== 'INR' && currency !== 'USD') {
-      return NextResponse.json({ error: 'Currency must be INR or USD' }, { status: 400 });
-    }
+    const { amount, currency } = validation.parsed!;
 
     const key_id = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID;
     const key_secret = process.env.RAZORPAY_KEY_SECRET;

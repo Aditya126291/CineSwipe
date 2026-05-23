@@ -51,13 +51,19 @@ const mapTvmazeGenreToTmdb = (genre: string): number => {
   }
 };
 
+import { validateCatalogFeedQuery } from '@/lib/validation';
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const mediaType = (searchParams.get('mediaType') || 'all') as 'movie' | 'tv' | 'all';
-    const genreIdStr = searchParams.get('genreId');
-    const genreId = genreIdStr ? Number(genreIdStr) : undefined;
-    const page = Math.max(1, Number(searchParams.get('page') || '1'));
+    
+    // Applied Declarative Input Schema Boundary Verification Pattern (Pillar 3)
+    const validation = validateCatalogFeedQuery(searchParams);
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
+    const { mediaType, genreId, page, seed } = validation.parsed!;
     const limit = 20;
 
     let finalItems: ContentItem[] = [];
@@ -81,7 +87,6 @@ export async function GET(request: Request) {
 
         if (!dbErr && dbData && dbData.length > 0) {
           const mapped = dbData.map((row) => mapCatalogRowToContentItem(row as Record<string, unknown>));
-          const seed = searchParams.get('seed');
           if (seed) {
             // Deterministic ordering to align all multiplayer clients perfectly
             finalItems = mapped;

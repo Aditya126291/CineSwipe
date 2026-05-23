@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { mockStore } from '@/lib/mock-store';
 
-const ROOM_CODE_REGEX = /^[A-Z0-9]{6}$/;
+import { isValidRoomCode, normalizeRoomCode, validateCreateRoomPayload } from '@/lib/validation';
 
 // GET to verify if a room code exists
 export async function GET(request: Request) {
@@ -12,8 +12,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Room code required' }, { status: 400 });
   }
 
-  const normalizedCode = code.toUpperCase();
-  if (!ROOM_CODE_REGEX.test(normalizedCode)) {
+  const normalizedCode = normalizeRoomCode(code);
+  if (!isValidRoomCode(normalizedCode)) {
     return NextResponse.json({ error: 'Invalid room code format. Code must be 6 alphanumeric characters.' }, { status: 400 });
   }
 
@@ -34,23 +34,22 @@ export async function GET(request: Request) {
 // POST to create a room
 export async function POST(request: Request) {
   try {
-    const { code, userId, isPremium } = await request.json();
+    const rawBody = await request.json();
 
-    if (!code || !userId) {
-      return NextResponse.json({ error: 'Code and userId are required' }, { status: 400 });
+    // Applied Declarative Input Schema Boundary Verification Pattern (Pillar 3)
+    const validation = validateCreateRoomPayload(rawBody);
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    const normalizedCode = code.toUpperCase();
-    if (!ROOM_CODE_REGEX.test(normalizedCode)) {
-      return NextResponse.json({ error: 'Invalid room code format. Code must be 6 alphanumeric characters.' }, { status: 400 });
-    }
+    const { code: normalizedCode, userId, isPremium } = validation.parsed!;
 
     const existingRoom = mockStore.getRoom(normalizedCode);
     if (existingRoom) {
       return NextResponse.json({ error: 'Room already exists' }, { status: 409 });
     }
 
-    const roomData = mockStore.createRoom(normalizedCode, userId, !!isPremium);
+    const roomData = mockStore.createRoom(normalizedCode, userId, isPremium);
 
     return NextResponse.json({
       success: true,

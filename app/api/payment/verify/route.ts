@@ -31,14 +31,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Razorpay secret missing' }, { status: 500 });
     }
 
-    // Verify cryptographic signature
+    // Verify cryptographic signature using constant-time comparison to prevent timing attacks (Pillar 4)
     const signaturePayload = razorpay_order_id + '|' + razorpay_payment_id;
     const expectedSignature = crypto
       .createHmac('sha256', key_secret)
       .update(signaturePayload)
       .digest('hex');
 
-    const isAuthentic = expectedSignature === razorpay_signature;
+    const expectedBuffer = Buffer.from(expectedSignature, 'hex');
+    const providedBuffer = Buffer.from(razorpay_signature, 'hex');
+
+    // Applied Secure Constant-Time Cryptographic Verification Pattern (Pillar 4)
+    const isAuthentic = expectedBuffer.length === providedBuffer.length && 
+      crypto.timingSafeEqual(expectedBuffer, providedBuffer);
 
     if (isAuthentic) {
       return NextResponse.json({ success: true, message: 'Payment successfully verified!' });

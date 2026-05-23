@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
 import { mockStore } from '@/lib/mock-store';
 
-const ROOM_CODE_REGEX = /^[A-Z0-9]{6}$/;
-
-const VALID_ACTIONS = ['start-session', 'swipe', 'undo-swipe'];
+import { isValidRoomCode, normalizeRoomCode, validateSyncRoomPayload } from '@/lib/validation';
 
 export async function POST(
   request: Request,
@@ -11,22 +9,21 @@ export async function POST(
 ) {
   try {
     const { code } = await params;
-    const normalizedCode = code.toUpperCase();
+    const normalizedCode = normalizeRoomCode(code);
 
-    if (!ROOM_CODE_REGEX.test(normalizedCode)) {
+    if (!isValidRoomCode(normalizedCode)) {
       return NextResponse.json({ error: 'Invalid room code format' }, { status: 400 });
     }
 
-    const body = await request.json();
-    const { userId, username, avatarColor, isPremium, action, swipe, movie } = body;
+    const rawBody = await request.json();
 
-    if (!userId) {
-      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
+    // Applied Declarative Input Schema Boundary Verification Pattern (Pillar 3)
+    const validation = validateSyncRoomPayload(rawBody);
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    if (action !== undefined && !VALID_ACTIONS.includes(action)) {
-      return NextResponse.json({ error: 'Invalid action payload' }, { status: 400 });
-    }
+    const { userId, username, avatarColor, isPremium, action, swipe, movie } = validation.parsed!;
 
     const roomData = mockStore.getRoom(normalizedCode);
     if (!roomData) {
@@ -65,10 +62,10 @@ export async function POST(
           content_type: swipe.mediaType,
           direction: swipe.direction,
         },
-        movie
+        movie as any
       );
     } else if (action === 'undo-swipe') {
-      const contentId = body.contentId;
+      const contentId = rawBody.contentId;
       if (contentId) {
         roomData.swipes = roomData.swipes.filter(
           s => !(s.user_id === userId && s.content_id === contentId)

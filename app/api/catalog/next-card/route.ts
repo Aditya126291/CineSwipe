@@ -56,9 +56,19 @@ const SUPPORTED_GENRE_IDS = [
   28, 35, 18, 878, 53, 27, 10749, 16, 99, 14, 10765, 10759, 80, 9648
 ];
 
+import { validateNextCardPayload } from '@/lib/validation';
+
 export async function POST(request: Request) {
   try {
-    const { mediaType = 'all', selectedGenreId, weights = {}, seen = [], recent = [] } = await request.json();
+    const rawBody = await request.json();
+    
+    // Applied Declarative Input Schema Boundary Verification Pattern (Pillar 3)
+    const validation = validateNextCardPayload(rawBody);
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
+    const { mediaType, selectedGenreId, weights, seen, recent } = validation.parsed!;
 
     // 1. Determine target genre using Roulette Wheel Selection (if no specific genre filter is active)
     let chosenGenre: number | undefined = selectedGenreId ? Number(selectedGenreId) : undefined;
