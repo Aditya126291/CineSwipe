@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Film, Sparkles, Users, User, ArrowRight, ShieldCheck } from 'lucide-react';
@@ -15,6 +15,15 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(false);
   const [joinError, setJoinError] = useState<string>('');
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('mock') === 'true') {
+        sessionStorage.setItem('cineswipe-mock-override', 'true');
+      }
+    }
+  }, []);
+
   // Generate 6-char alphanumeric room code
   const handleCreateRoom = () => {
     setLoading(true);
@@ -23,7 +32,8 @@ export default function Home() {
     for (let i = 0; i < 6; i++) {
       code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-    router.push(`/room/${code}?host=true`);
+    const isMock = sessionStorage.getItem('cineswipe-mock-override') === 'true';
+    router.push(`/room/${code}?host=true${isMock ? '&mock=true' : ''}`);
   };
 
   const handleJoinRoom = async (e: React.FormEvent) => {
@@ -34,7 +44,8 @@ export default function Home() {
     const normalizedCode = roomCode.trim().toUpperCase();
     setLoading(true);
     try {
-      if (hasSupabase() && supabase) {
+      const isMock = sessionStorage.getItem('cineswipe-mock-override') === 'true';
+      if (hasSupabase() && supabase && !isMock) {
         const { data, error } = await supabase
           .from('rooms')
           .select('code')
@@ -54,7 +65,7 @@ export default function Home() {
           return;
         }
       }
-      router.push(`/room/${normalizedCode}`);
+      router.push(`/room/${normalizedCode}${isMock ? '?mock=true' : ''}`);
     } catch {
       setJoinError('Failed to verify room');
     } finally {

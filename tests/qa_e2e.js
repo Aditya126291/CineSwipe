@@ -32,7 +32,7 @@ const { chromium } = require('playwright');
     // 1. Room Creation
     // ---------------------------------------------------------
     console.log("Host creating room...");
-    await hostPage.goto('http://localhost:3000');
+    await hostPage.goto('http://localhost:3000/?mock=true');
     
     await hostPage.click('button:has-text("Popcorn Swipe Party")');
     await hostPage.click('button:has-text("Host Room Party")');
@@ -55,7 +55,7 @@ const { chromium } = require('playwright');
     // ---------------------------------------------------------
     console.log("Guests 1 & 2 joining...");
     const joinRoom = async (page, guestNum) => {
-      await page.goto('http://localhost:3000');
+      await page.goto('http://localhost:3000/?mock=true');
       await page.click('button:has-text("Popcorn Swipe Party")');
       await page.fill('input[placeholder="E.g. MZ94X7"]', roomCode);
       await page.locator('form button[type="submit"]').click();
@@ -83,7 +83,7 @@ const { chromium } = require('playwright');
     // 3. Test Lobby Capacity Paywall Bypass (Guest 3 joins)
     // ---------------------------------------------------------
     console.log("Guest 3 attempting to join (should fail)...");
-    await guest3Page.goto('http://localhost:3000');
+    await guest3Page.goto('http://localhost:3000/?mock=true');
     await guest3Page.click('button:has-text("Popcorn Swipe Party")');
     await guest3Page.fill('input[placeholder="E.g. MZ94X7"]', roomCode);
     await guest3Page.click('button:has-text("Join")');

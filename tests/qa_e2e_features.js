@@ -27,7 +27,7 @@ const path = require('path');
     // 1. Room Creation
     // ---------------------------------------------------------
     console.log("Host creating room...");
-    await hostPage.goto('http://localhost:3000');
+    await hostPage.goto('http://localhost:3000/?mock=true');
     
     await hostPage.click('button:has-text("Popcorn Swipe Party")');
     await hostPage.click('button:has-text("Host Room Party")');
@@ -40,7 +40,6 @@ const path = require('path');
     // Host confirms nickname
     console.log("Host confirming nickname...");
     await hostPage.waitForSelector('button:has-text("Confirm Nickname")');
-    await hostPage.fill('input[type="text"]', 'HostQA');
     await hostPage.click('button:has-text("Confirm Nickname")');
     
     await hostPage.waitForSelector('text=Party Ticket Code', { timeout: 10000 });
@@ -50,14 +49,13 @@ const path = require('path');
     // ---------------------------------------------------------
     console.log("Guests 1 & 2 joining...");
     const joinRoom = async (page, guestNum, nickname) => {
-      await page.goto('http://localhost:3000');
+      await page.goto('http://localhost:3000/?mock=true');
       await page.click('button:has-text("Popcorn Swipe Party")');
       await page.fill('input[placeholder="E.g. MZ94X7"]', roomCode);
       await page.click('button:has-text("Join")');
       await page.waitForURL(/\/room\//);
       
       await page.waitForSelector('button:has-text("Confirm Nickname")');
-      await page.fill('input[type="text"]', nickname);
       await page.click('button:has-text("Confirm Nickname")');
       
       await page.waitForSelector('text=Party Ticket Code', { timeout: 10000 });

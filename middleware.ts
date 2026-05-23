@@ -14,6 +14,11 @@ export function middleware(request: NextRequest) {
   
   // Rate limit all backend API endpoints to protect resources against brute force / DoS
   if (request.nextUrl.pathname.startsWith('/api/')) {
+    // Bypass rate limiting in local development / testing environments to support parallel E2E verification
+    if (process.env.NODE_ENV === 'development') {
+      return NextResponse.next();
+    }
+
     const now = Date.now();
     const timestamps = rateLimitStore.get(ip) || [];
     

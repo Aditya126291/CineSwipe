@@ -163,8 +163,12 @@ export function usePremium(userId?: string) {
     
     // Fast local simulation for dev/sandbox mode if Razorpay key is missing or mock
     const key_id = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+    console.log('[CineSwipe Premium Debug] triggerRazorpayCheckout invoked.');
+    console.log('[CineSwipe Premium Debug] NEXT_PUBLIC_RAZORPAY_KEY_ID variable:', key_id);
+    console.log('[CineSwipe Premium Debug] Region:', region, 'Amount:', amount, 'Currency:', currency);
+
     if (!key_id || key_id === 'rzp_test_mockkey123') {
-      console.log('Razorpay public key not set. Running clean visual checkout bypass...');
+      console.warn('[CineSwipe Premium Debug] Razorpay public key not set or mock. Running clean visual checkout bypass...');
       setTimeout(() => {
         upgradeToPremium();
         onSuccess();
@@ -174,6 +178,7 @@ export function usePremium(userId?: string) {
     
     // Check if Razorpay script is loaded. If not, inject it
     const loadRazorpayScript = () => {
+      console.log('[CineSwipe Premium Debug] Loading Razorpay script...');
       return new Promise((resolve) => {
         const script = document.createElement('script');
         script.src = 'https://checkout.razorpay.com/v1/checkout.js';

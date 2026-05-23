@@ -32,7 +32,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.supabase.co https://image.tmdb.org; connect-src 'self' https://*.supabase.co https://api.tvmaze.com https://checkout.razorpay.com; frame-src 'self' https://checkout.razorpay.com https://www.youtube.com;", // Restricts resource loading domains securely
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://cdn.razorpay.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.supabase.co https://image.tmdb.org https://*.razorpay.com; connect-src 'self' https://*.supabase.co https://api.tvmaze.com https://checkout.razorpay.com https://api.razorpay.com https://lumberjack.razorpay.com https://lumberjack-cx.razorpay.com; frame-src 'self' https://checkout.razorpay.com https://api.razorpay.com https://www.youtube.com;", // Restricts resource loading domains securely
           }
         ],
       },
