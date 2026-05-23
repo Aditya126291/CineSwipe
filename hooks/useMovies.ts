@@ -48,7 +48,7 @@ export function removeSeenMovieId(id: number) {
   localStorage.setItem('cineswipe-seen-ids', JSON.stringify(updated));
 }
 
-function getStoredWeights() {
+export function getStoredWeights() {
   if (typeof window === 'undefined') return initializeWeights();
   const stored = localStorage.getItem('cineswipe-genre-weights');
   if (stored) {

@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { preloadPosterImages } from '@/lib/catalog/preload';
 import { updateFeedWeightsMultiple, penalizeFeedWeightsMultiple, initializeWeights } from '@/lib/recommendations';
 import { ArrowLeft, History } from 'lucide-react';
 import Link from 'next/link';
-import { useMovies, saveSeenMovieId, removeSeenMovieId } from '@/hooks/useMovies';
+import { useMovies, saveSeenMovieId, removeSeenMovieId, getSeenMovieIds, getStoredWeights } from '@/hooks/useMovies';
 import { usePremium } from '@/hooks/usePremium';
 import { useSwipeDeck } from '@/hooks/useSwipeDeck';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -24,7 +24,8 @@ export default function SoloSwipePage() {
 
   // Core Hooks
   const { isPremium, swipesLeft, maxDailySwipes, incrementSwipeCount, triggerRazorpayCheckout } = usePremium();
-  const { movies, genres, loading, loadMore, hasMore, fetchNext } = useMovies(contentType, selectedGenreId);
+  const { movies, setMovies, genres, loading, loadMore, hasMore, fetchNext } = useMovies(contentType, selectedGenreId);
+  const isFetchingRef = useRef<boolean>(false);
 
   const handleLimitExceeded = () => {
     setUpgradeOpen(true);
@@ -142,13 +143,74 @@ export default function SoloSwipePage() {
     undo,
   } = useSwipeDeck(movies, handleSwipeRecord, handleLimitExceeded);
 
+  // Preload images for smooth interactive swiping animations
   useEffect(() => {
     if (movies.length === 0) return;
     preloadPosterImages(movies, currentIndex + 1, 4);
-    if (hasMore && currentIndex >= movies.length - 5 && !loading) {
-      loadMore();
+  }, [currentIndex, movies]);
+
+  // Self-healing dynamic card queue filler to maintain a robust 12-card buffer in Solo Swipe Mode
+  useEffect(() => {
+    if (loading || movies.length === 0) return;
+
+    const unswipedCount = movies.length - currentIndex;
+    
+    if (unswipedCount < 8 && !isFetchingRef.current) {
+      const topUp = async () => {
+        isFetchingRef.current = true;
+        try {
+          // We iteratively fetch cards in a serialized loop to ensure that:
+          // 1. Each fetch payload includes the very latest movies in the 'seen' filter list.
+          // 2. We completely avoid concurrent race condition duplicates.
+          // 3. We maintain a healthy buffer of 12 unswiped cards at all times.
+          let currentMovies = [...movies];
+          while (currentMovies.length - currentIndex < 12) {
+            const globalSeen = getSeenMovieIds();
+            const weights = getStoredWeights();
+            const recent = currentMovies.slice(-3);
+
+            const res = await fetch('/api/catalog/next-card', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                mediaType: contentType,
+                selectedGenreId: selectedGenreId,
+                weights,
+                seen: [...globalSeen, ...currentMovies.map(item => item.id)],
+                recent: recent.map(item => ({ id: item.id, title: item.title, genreIds: item.genreIds, mediaType: item.mediaType }))
+              })
+            });
+
+            if (!res.ok) break;
+            const data = await res.json();
+            if (data.card) {
+              const cardId = data.card.id;
+              // Check if already in the queue to prevent duplicate cards
+              if (currentMovies.some(item => item.id === cardId)) {
+                break; // Break to prevent infinite loop
+              }
+              currentMovies.push(data.card);
+              
+              // Update local state to trigger rerender with the new batch
+              setMovies((prev) => {
+                if (prev.some(item => item.id === cardId)) return prev;
+                return [...prev, data.card];
+              });
+            } else {
+              break;
+            }
+            // Add a micro-delay to allow UI thread breathing room
+            await new Promise(resolve => setTimeout(resolve, 30));
+          }
+        } catch (err) {
+          console.error('Failed to top up dynamic card queue:', err);
+        } finally {
+          isFetchingRef.current = false;
+        }
+      };
+      topUp();
     }
-  }, [currentIndex, movies, hasMore, loading, loadMore]);
+  }, [currentIndex, movies, loading, contentType, selectedGenreId, setMovies]);
 
   const handleUndo = () => {
     // Revert seen status of the last swiped movie in localStorage
