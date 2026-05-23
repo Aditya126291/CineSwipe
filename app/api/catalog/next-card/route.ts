@@ -114,6 +114,10 @@ export async function POST(request: Request) {
     // Fetch from Supabase Catalog
     if (supabase) {
       try {
+        let dbData: any[] | null = null;
+        let dbErr: any = null;
+
+        // Layer 1 (Strict): media_type + genres contains
         let query = supabase.from('movies_catalog').select('*');
         if (chosenMediaType !== 'all') {
           query = query.eq('media_type', chosenMediaType);
@@ -121,10 +125,32 @@ export async function POST(request: Request) {
         if (chosenGenre) {
           query = query.contains('genres', [chosenGenre]);
         }
-        
-        // Grab a larger slice to ensure we have unseen candidates after filtering
-        const { data: dbData, error: dbErr } = await query.limit(40);
-        
+        const res1 = await query.limit(40);
+        dbData = res1.data;
+        dbErr = res1.error;
+
+        // Layer 2 (Medium): media_type only, ignoring genres
+        if ((dbErr || !dbData || dbData.length === 0) && chosenGenre) {
+          let query2 = supabase.from('movies_catalog').select('*');
+          if (chosenMediaType !== 'all') {
+            query2 = query2.eq('media_type', chosenMediaType);
+          }
+          const res2 = await query2.limit(40);
+          if (!res2.error && res2.data && res2.data.length > 0) {
+            dbData = res2.data;
+            dbErr = null;
+          }
+        }
+
+        // Layer 3 (Wide): entire catalog, ignoring both media_type and genres
+        if (dbErr || !dbData || dbData.length === 0) {
+          const res3 = await supabase.from('movies_catalog').select('*').limit(40);
+          if (!res3.error && res3.data && res3.data.length > 0) {
+            dbData = res3.data;
+            dbErr = null;
+          }
+        }
+
         if (!dbErr && dbData && dbData.length > 0) {
           const mapped = dbData.map((row) => mapCatalogRowToContentItem(row as Record<string, unknown>));
           candidatePool.push(...mapped);
@@ -144,7 +170,7 @@ export async function POST(request: Request) {
           const shows = await res.json();
           if (shows && shows.length > 0) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const filteredShows = shows.filter((show: any) => {
+            let filteredShows = shows.filter((show: any) => {
               if (!show.image?.medium || !show.name) return false;
               if (chosenGenre) {
                 const tvmazeGenres = mapTmdbGenreToTvmaze(chosenGenre);
@@ -155,6 +181,12 @@ export async function POST(request: Request) {
               }
               return true;
             });
+
+            // Fallback: If 0 shows matched the genre filter, ignore the genre check to keep candidate pool size
+            if (filteredShows.length === 0 && chosenGenre) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              filteredShows = shows.filter((show: any) => show.image?.medium && show.name);
+            }
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const tvmazeItems: ContentItem[] = filteredShows.map((show: any) => {
@@ -405,10 +437,24 @@ export async function POST(request: Request) {
         fallbackCandidates.sort((a, b) => a.score - b.score);
         selectedItem = fallbackCandidates[0].item;
       } else if (supabase) {
-        // Ultimate database fallback
-        const { data } = await supabase.from('movies_catalog').select('*').limit(5);
+        // Ultimate database fallback: query a larger set and apply LRS to guarantee no duplicates in active queue
+        const { data } = await supabase.from('movies_catalog').select('*').limit(40);
         if (data && data.length > 0) {
-          selectedItem = mapCatalogRowToContentItem(data[0] as Record<string, unknown>);
+          const mapped = data.map((row) => mapCatalogRowToContentItem(row as Record<string, unknown>));
+          const fallbackCandidates = mapped.map(candidate => {
+            const seenIndex = seen.indexOf(candidate.id);
+            let score = seenIndex === -1 ? -100 : seenIndex;
+            const isRecent = recent.some((r: { id: number }) => Number(r.id) === candidate.id);
+            if (isRecent) {
+              score += 10000;
+            }
+            if (seen.length > 0 && seen[seen.length - 1] === candidate.id) {
+              score += 5000;
+            }
+            return { item: candidate, score };
+          });
+          fallbackCandidates.sort((a, b) => a.score - b.score);
+          selectedItem = fallbackCandidates[0].item;
         }
       }
     }
