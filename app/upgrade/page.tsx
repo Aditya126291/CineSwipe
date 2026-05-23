@@ -184,6 +184,16 @@ export default function UpgradePage() {
                       </>
                     )}
                   </button>
+
+                  {/* Test Mode / Sandbox Notice */}
+                  <div className="w-full mt-4 p-3.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-center flex flex-col gap-1 pointer-events-none">
+                    <span className="text-[9px] text-amber-400 font-black tracking-widest uppercase flex items-center justify-center gap-1">
+                      ⚠️ Sandbox Test Mode
+                    </span>
+                    <p className="text-[9px] text-zinc-400 normal-case font-bold leading-normal">
+                      This is a demo checkout. Use mock credentials (e.g., Card: <code className="bg-white/5 px-1 py-0.5 rounded text-amber-300 font-mono">4111 1111 1111 1111</code>, CVV: <code className="bg-white/5 px-1 py-0.5 rounded text-amber-300 font-mono">123</code>) or mock UPI to test.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
