@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { safeStorage, safeSessionStorage } from '@/lib/storage';
 import { supabase } from '@/lib/supabase/client';
+import { getClientRegion } from '@/lib/catalog/providers-geo';
 
 export interface PremiumState {
   isPremium: boolean;
@@ -156,8 +157,9 @@ export function usePremium(userId?: string) {
 
   // Trigger Razorpay payment (fully customisable, fallbacks to simulated checkout if Keys are missing)
   const triggerRazorpayCheckout = (onSuccess: () => void, onError: (err: unknown) => void) => {
-    const amount = 9900; // Rs. 99 (9900 paise)
-    const currency = 'INR';
+    const region = getClientRegion();
+    const amount = region === 'IN' ? 9900 : 300; // Rs. 99 (9900 paise) or $3 USD (300 cents)
+    const currency = region === 'IN' ? 'INR' : 'USD';
     
     // Fast local simulation for dev/sandbox mode if Razorpay key is missing or mock
     const key_id = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;

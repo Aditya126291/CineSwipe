@@ -5,7 +5,7 @@ import { preloadPosterImages } from '@/lib/catalog/preload';
 import { updateFeedWeightsMultiple, penalizeFeedWeightsMultiple, initializeWeights } from '@/lib/recommendations';
 import { ArrowLeft, History } from 'lucide-react';
 import Link from 'next/link';
-import { useMovies } from '@/hooks/useMovies';
+import { useMovies, saveSeenMovieId, removeSeenMovieId } from '@/hooks/useMovies';
 import { usePremium } from '@/hooks/usePremium';
 import { useSwipeDeck } from '@/hooks/useSwipeDeck';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -24,7 +24,7 @@ export default function SoloSwipePage() {
 
   // Core Hooks
   const { isPremium, swipesLeft, maxDailySwipes, incrementSwipeCount, triggerRazorpayCheckout } = usePremium();
-  const { movies, genres, loading, loadMore, hasMore } = useMovies(contentType, selectedGenreId);
+  const { movies, genres, loading, loadMore, hasMore, fetchNext } = useMovies(contentType, selectedGenreId);
 
   const handleLimitExceeded = () => {
     setUpgradeOpen(true);
@@ -125,6 +125,10 @@ export default function SoloSwipePage() {
           localStorage.setItem('cineswipe-genre-weights', JSON.stringify(newState.weights));
         }
       }
+
+      // Save swiped movie to global seen list and trigger dynamic single-card fetch in the background
+      saveSeenMovieId(movieId);
+      fetchNext();
     }
   };
 
@@ -147,6 +151,12 @@ export default function SoloSwipePage() {
   }, [currentIndex, movies, hasMore, loading, loadMore]);
 
   const handleUndo = () => {
+    // Revert seen status of the last swiped movie in localStorage
+    if (history.length > 0) {
+      const revertedMovieId = history[0].item.id;
+      removeSeenMovieId(revertedMovieId);
+    }
+
     // Restore previous weights from history if applicable
     if (typeof window !== 'undefined') {
       const storedHistory = localStorage.getItem('cineswipe-genre-weights-history');

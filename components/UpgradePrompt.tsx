@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Sparkles, Zap, Check, Users, Film, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
+import { getClientRegion } from '@/lib/catalog/providers-geo';
 
 interface UpgradePromptProps {
   isOpen: boolean;
@@ -114,7 +115,14 @@ export default function UpgradePrompt({ isOpen, onClose, onSuccess, triggerRazor
                       <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider mt-0.5">One-time payment • Forever yours</span>
                     </div>
                     <div className="flex flex-col items-end">
-                      <span className="text-2xl font-black text-amber-400">₹99 <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">USD $2</span></span>
+                      {getClientRegion() === 'IN' ? (
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-zinc-500 line-through text-sm font-bold">$3</span>
+                          <span className="text-2xl font-black text-amber-400">₹99</span>
+                        </div>
+                      ) : (
+                        <span className="text-2xl font-black text-amber-400">$3</span>
+                      )}
                     </div>
                   </div>
 

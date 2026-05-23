@@ -14,9 +14,9 @@ export interface RecommendationState {
 /** Instagram-style: long-tail floor, cluster cap, smooth boosts, negative signals on skip */
 const FLOOR = 0.03;
 const CAP = 0.28;
-const LIKE_BOOST = 0.04;
-const CONTEXT_SWITCH_PENALTY = 0.03;
-const DISLIKE_PENALTY = 0.06; // Highly responsive negative signal penalty for immediate context updates
+const LIKE_BOOST = 0.01; // Gradual positive signal (reduced from 0.04)
+const CONTEXT_SWITCH_PENALTY = 0.005; // Subtle context switch shift (reduced from 0.03)
+const DISLIKE_PENALTY = 0.015; // Gradual negative signal (reduced from 0.06)
 
 export const SUPPORTED_GENRE_IDS = [
   28, 35, 18, 878, 53, 27, 10749, 16, 99, 14, 10765, 10759, 80, 9648,

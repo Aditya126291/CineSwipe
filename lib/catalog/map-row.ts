@@ -1,4 +1,5 @@
 import type { ContentItem } from '@/lib/types/content';
+import { proxyImageUrl } from '@/lib/tmdb/client';
 
 export function mapCatalogRowToContentItem(item: Record<string, unknown>): ContentItem {
   const posterUrl = (item.poster_url as string) || '/poster-placeholder.svg';
@@ -20,7 +21,7 @@ export function mapCatalogRowToContentItem(item: Record<string, unknown>): Conte
       .filter((p) => p && p.name)
       .map((p) => ({
         name: p.name,
-        logoUrl: p.logoUrl,
+        logoUrl: p.logoUrl ? proxyImageUrl(p.logoUrl, 'w92') : '',
         link: p.link,
       })),
   };

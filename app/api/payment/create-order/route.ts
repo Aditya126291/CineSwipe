@@ -13,8 +13,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Amount must be a positive integer representing paise' }, { status: 400 });
     }
 
-    if (currency !== 'INR') {
-      return NextResponse.json({ error: 'Currency must be INR' }, { status: 400 });
+    if (currency !== 'INR' && currency !== 'USD') {
+      return NextResponse.json({ error: 'Currency must be INR or USD' }, { status: 400 });
     }
 
     const key_id = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID;

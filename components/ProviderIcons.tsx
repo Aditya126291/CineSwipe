@@ -69,9 +69,9 @@ export default function ProviderIcons({ providers, movieId, movieTitle }: Provid
   const getProviderLogo = (name: string, logoUrl?: string) => {
     const normName = name.toLowerCase();
 
-    // If the database has a valid public logoUrl (hosted on Supabase or TMDB), render it directly!
+    // If the database has a valid public logoUrl (hosted on Supabase, TMDB, or proxied locally), render it directly!
     // BUT only if it hasn't failed to load in this session!
-    if (logoUrl && logoUrl.startsWith('http') && !failedLogos[normName]) {
+    if (logoUrl && (logoUrl.startsWith('http') || logoUrl.startsWith('/')) && !failedLogos[normName]) {
       return (
         <div className="w-8 h-8 rounded-lg overflow-hidden border border-zinc-800 bg-zinc-950 flex items-center justify-center shadow-md hover:border-zinc-700 transition-colors duration-200">
           <img 

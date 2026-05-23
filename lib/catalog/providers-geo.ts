@@ -237,10 +237,27 @@ export const PROVIDER_GEO_DICTIONARY: Record<number, Record<string, ProviderLink
 
 /**
  * Synchronously detects if the client resides in the United States, India, or another Global territory.
+ * Supports URL search parameter and sessionStorage overrides for easy local simulation (?geo=US or ?geo=IN).
  */
 export function getClientRegion(): Region {
   if (typeof window === 'undefined') return 'IN'; // Safe build-time fallback
   try {
+    // 1. Session storage override for testing
+    const override = sessionStorage.getItem('cineswipe-geo-override');
+    if (override === 'US' || override === 'IN' || override === 'GLOBAL') {
+      return override as Region;
+    }
+
+    // 2. Check URL parameters for override
+    if (window.location.search) {
+      const params = new URLSearchParams(window.location.search);
+      const geo = params.get('geo')?.toUpperCase();
+      if (geo === 'US' || geo === 'IN' || geo === 'GLOBAL') {
+        sessionStorage.setItem('cineswipe-geo-override', geo);
+        return geo as Region;
+      }
+    }
+
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     if (tz && (tz.startsWith('America/') || tz.startsWith('US/') || tz === 'EST' || tz === 'MST' || tz === 'PST' || tz === 'CST')) {
       return 'US';

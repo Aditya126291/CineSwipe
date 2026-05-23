@@ -16,14 +16,49 @@ export const ALL_GENRES: Genre[] = [
   { id: 10759, name: 'Action & Adventure' }, { id: 80, name: 'Crime' }, { id: 9648, name: 'Mystery' }
 ];
 
-export function seededRandom(seed: string) {
-  let h = 0xdeadbeef;
-  for (let i = 0; i < seed.length; i++) {
-    h = Math.imul(h ^ seed.charCodeAt(i), 2654435761);
+// Persistent Seen List helper functions
+export function getSeenMovieIds(): number[] {
+  if (typeof window === 'undefined') return [];
+  const stored = localStorage.getItem('cineswipe-seen-ids');
+  if (!stored) return [];
+  try {
+    return JSON.parse(stored);
+  } catch {
+    return [];
   }
-  return function () {
-    h = Math.imul(h ^ (h >>> 16), 2246822507);
+}
+
+export function saveSeenMovieId(id: number) {
+  if (typeof window === 'undefined') return;
+  const seen = getSeenMovieIds();
+  if (!seen.includes(id)) {
+    seen.push(id);
+    // Keep only the most recent 2000 seen IDs
+    if (seen.length > 2000) {
+      seen.shift();
+    }
+    localStorage.setItem('cineswipe-seen-ids', JSON.stringify(seen));
   }
+}
+
+export function removeSeenMovieId(id: number) {
+  if (typeof window === 'undefined') return;
+  const seen = getSeenMovieIds();
+  const updated = seen.filter((x) => x !== id);
+  localStorage.setItem('cineswipe-seen-ids', JSON.stringify(updated));
+}
+
+function getStoredWeights() {
+  if (typeof window === 'undefined') return initializeWeights();
+  const stored = localStorage.getItem('cineswipe-genre-weights');
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return initializeWeights();
+    }
+  }
+  return initializeWeights();
 }
 
 export function useMovies(
@@ -41,36 +76,24 @@ export function useMovies(
   const [catalogSource, setCatalogSource] = useState<CatalogSource>('unknown');
   const loadingMoreRef = useRef(false);
 
-  // In-memory set to prevent ANY repeated cards inside the active section
+  // --- LOBBY/ROOM MODE: Batch-based deterministic fetching ---
   const shownMovieIdsRef = useRef<Set<number>>(new Set());
 
   const rankFetchedMovies = useCallback((items: ContentItem[]) => {
     if (shuffleSeed) return items;
-    let weights = initializeWeights();
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('cineswipe-genre-weights');
-      if (stored) {
-        try {
-          weights = JSON.parse(stored);
-        } catch (e) {
-          console.error('Failed to parse weights', e);
-        }
-      }
-    }
+    const weights = getStoredWeights();
     return rankMovies(items, weights);
   }, [shuffleSeed]);
 
   const finalizeBatch = useCallback(
     async (items: ContentItem[], clear: boolean, pageNum: number) => {
       const ranked = rankFetchedMovies(items);
-
       let output = ranked;
       if (shuffleSeed) {
         let h = 0xdeadbeef;
         for (let i = 0; i < shuffleSeed.length; i++) {
           h = Math.imul(h ^ shuffleSeed.charCodeAt(i), 2654435761);
         }
-        // Custom seeded random since randomizer is simple
         const rng = () => {
           h = Math.imul(h ^ (h >>> 16), 2246822507);
           h = Math.imul(h ^ (h >>> 13), 3266489909);
@@ -84,21 +107,16 @@ export function useMovies(
         }
       }
 
-      // Add all shown IDs to our seen set to block repeats
       items.forEach((item) => shownMovieIdsRef.current.add(item.id));
-
-      // Classify the catalog source based on IDs
       const hasTvmaze = items.some(item => item.id >= 2000000);
-      const source: CatalogSource = hasTvmaze ? 'tvmaze' : 'supabase';
-
-      setCatalogSource(source);
+      setCatalogSource(hasTvmaze ? 'tvmaze' : 'supabase');
       setMovies((prev) => (clear ? output : [...prev, ...output]));
       setHasMore(items.length >= CATALOG_BATCH_SIZE);
     },
     [rankFetchedMovies, shuffleSeed]
   );
 
-  const loadMovies = useCallback(
+  const loadMoviesBatch = useCallback(
     async (pageNum: number, clear = false) => {
       if (loadingMoreRef.current && !clear) return;
       loadingMoreRef.current = true;
@@ -110,8 +128,6 @@ export function useMovies(
         let currentPage = pageNum;
         let consecutiveEmptyAttempts = 0;
 
-        // Auto-paginate on the server in a loop if the returned batch contains 
-        // items we've already shown in this section. This keeps the feed truly continuous!
         while (finalItems.length < CATALOG_BATCH_SIZE && consecutiveEmptyAttempts < 5) {
           const url = `/api/catalog/feed?mediaType=${mediaType}&page=${currentPage}${
             genreId ? `&genreId=${genreId}` : ''
@@ -130,7 +146,6 @@ export function useMovies(
             continue;
           }
 
-          // Filter out items that are already in shownMovieIdsRef
           const unseen = data.results.filter(
             (item: ContentItem) =>
               !shownMovieIdsRef.current.has(item.id) &&
@@ -138,7 +153,6 @@ export function useMovies(
           );
 
           finalItems.push(...unseen);
-
           if (!data.hasMore) break;
           currentPage++;
         }
@@ -156,27 +170,126 @@ export function useMovies(
         loadingMoreRef.current = false;
       }
     },
-    [mediaType, genreId, finalizeBatch]
+    [mediaType, genreId, shuffleSeed, finalizeBatch]
   );
 
+
+  // --- SOLO SWIPE MODE: Dynamic single-card probabilistic queue ---
+  const primeSoloQueue = useCallback(async (currentMediaType: 'movie' | 'tv' | 'all', currentGenreId?: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const initialList: ContentItem[] = [];
+      const globalSeen = getSeenMovieIds();
+      const weights = getStoredWeights();
+      const recent: ContentItem[] = [];
+
+      // Priming 4 disjoint cards in a loop
+      for (let i = 0; i < 4; i++) {
+        const res = await fetch('/api/catalog/next-card', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mediaType: currentMediaType,
+            selectedGenreId: currentGenreId,
+            weights,
+            seen: [...globalSeen, ...initialList.map(item => item.id)],
+            recent: recent.map(item => ({ id: item.id, title: item.title, genreIds: item.genreIds, mediaType: item.mediaType }))
+          })
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (data.card) {
+          initialList.push(data.card);
+          recent.unshift(data.card);
+        }
+      }
+
+      setMovies(initialList);
+      const hasTvmaze = initialList.some(item => item.id >= 2000000);
+      setCatalogSource(hasTvmaze ? 'tvmaze' : 'supabase');
+      setHasMore(true);
+    } catch (err) {
+      console.error('Failed to prime solo queue:', err);
+      setError('Could not initialize movie feed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchNext = useCallback(async () => {
+    try {
+      const globalSeen = getSeenMovieIds();
+      const weights = getStoredWeights();
+      
+      // Grab the last 3 cards as context for diversity check
+      const recent = movies.slice(-3);
+
+      const res = await fetch('/api/catalog/next-card', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mediaType,
+          selectedGenreId: genreId,
+          weights,
+          seen: globalSeen,
+          recent: recent.map(item => ({ id: item.id, title: item.title, genreIds: item.genreIds, mediaType: item.mediaType }))
+        })
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data.card) {
+        setMovies((prev) => {
+          // Double-check to avoid duplicate loads in client queue
+          if (prev.some(item => item.id === data.card.id)) return prev;
+          return [...prev, data.card];
+        });
+      }
+    } catch (err) {
+      console.error('Failed to fetch next dynamic card:', err);
+    }
+  }, [movies, mediaType, genreId]);
+
+
+  // Initialize and reload feed when parameters change
   useEffect(() => {
     const timer = setTimeout(() => {
-      // Clear the seen set strictly when changing sections, matching Instagram Reels exactly!
-      shownMovieIdsRef.current.clear();
-      setPage(1);
-      setHasMore(true);
-      loadMovies(1, true);
+      if (shuffleSeed) {
+        // Room sync determinism mode
+        shownMovieIdsRef.current.clear();
+        setPage(1);
+        setHasMore(true);
+        loadMoviesBatch(1, true);
+      } else {
+        // Real-time dynamic solo swipe mode
+        primeSoloQueue(mediaType, genreId);
+      }
     }, 0);
     return () => clearTimeout(timer);
-  }, [mediaType, genreId, shuffleSeed, loadMovies]);
+  }, [mediaType, genreId, shuffleSeed, loadMoviesBatch, primeSoloQueue]);
 
-  // Load more when reaching near the end of the loaded stack
+  // Load more when reaching near the end (only for Room mode sync fallback)
   const loadMore = useCallback(() => {
-    if (!hasMore || loading) return;
-    const nextPage = page + 1;
-    setPage(nextPage);
-    loadMovies(nextPage, false);
-  }, [page, hasMore, loading, loadMovies]);
+    if (shuffleSeed) {
+      if (!hasMore || loading) return;
+      const nextPage = page + 1;
+      setPage(nextPage);
+      loadMoviesBatch(nextPage, false);
+    }
+  }, [page, hasMore, loading, loadMoviesBatch, shuffleSeed]);
 
-  return { movies, setMovies, genres, loading, error, loadMore, hasMore, catalogSource, page };
+  return { 
+    movies, 
+    setMovies, 
+    genres, 
+    loading, 
+    error, 
+    loadMore, 
+    hasMore, 
+    catalogSource, 
+    page,
+    fetchNext
+  };
 }
