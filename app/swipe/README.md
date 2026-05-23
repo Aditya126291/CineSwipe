@@ -17,23 +17,5 @@ Single-player movie/web-series discovery with genre filters, daily limits, recom
 
 ## Dependencies
 
-| Hook / lib | Use |
-| --- | --- |
-| `useMovies` | Feed loading |
-| `useSwipeDeck` | Index, history, undo |
-| `usePremium` | Limits + checkout |
-| `lib/recommendations` | Weight math |
-
-## Known bugs
-
-- Unused `loadMore` removed from destructuring (lint)
-- Empty feed when all sources fail — should show error UI (optional improvement)
-
-## Verification
-
-- Visit `/swipe`, like/dislike/undo advances deck
-- 31st swipe opens upgrade prompt for free user
-
-## After successful execution
-
-Update solo E2E rows in `Architecture.md`.
+- Upstream: `hooks/`, `lib/`
+- Downstream: none (entry layer)

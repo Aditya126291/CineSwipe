@@ -37,19 +37,3 @@ E2E scripts still use `title="Like"` selectors — both work.
 ## Superlike toast
 
 Listens for `window` event `cineswipe-superlike` with `{ username, contentId }`. Toast shows for any matching item in `movies` prop (not only active card).
-
-## Known bugs
-
-| Issue | Status |
-| --- | --- |
-| Superlike toast only on active card | **Fixed** |
-| Icon-only buttons elsewhere | Add `aria-label` to `MovieCard` flip/trailer as needed |
-
-## Verification
-
-- Keyboard focus visible on control bar
-- `tests/qa_e2e_features.js` superlike text `superliked this`
-
-## After successful execution
-
-Update a11y notes in `Architecture.md` failure #7.

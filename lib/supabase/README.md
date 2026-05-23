@@ -12,7 +12,7 @@ Supabase browser client, TypeScript types, and SQL schema for production multipl
 | [`types.ts`](types.ts) | `Room`, `RoomMember`, `Swipe`, etc. |
 | [`schema.sql`](schema.sql) | Tables, RLS, triggers, **`movies_catalog`** |
 
-## `movies_catalog` (added 2026-05-21)
+## `movies_catalog`
 
 Required by [`hooks/useMovies.ts`](../../hooks/useMovies.ts). Columns: `id`, `title`, `overview`, `rating`, `media_type`, `genres[]`, `poster_url`, `providers` JSONB, etc.
 
@@ -27,19 +27,3 @@ Required by [`hooks/useMovies.ts`](../../hooks/useMovies.ts). Columns: `id`, `ti
 ## RLS
 
 Permissive policies for hackathon-style demo; tighten for production.
-
-## Known bugs
-
-| Issue | Status |
-| --- | --- |
-| Catalog table missing | **Fixed** in schema.sql — must apply remotely |
-| FK errors without user row | `useRoom` upserts `users` before join |
-
-## Verification
-
-- With env set: create room in Supabase mode from host flow
-- Without env: `hasSupabase()` false → mock APIs only
-
-## After successful execution
-
-Update schema alignment note in `Architecture.md` failure #10.

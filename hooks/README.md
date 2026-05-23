@@ -8,7 +8,7 @@ React hooks encapsulating data fetching, room lifecycle, premium limits, theme, 
 
 | File | Export | Responsibility |
 | --- | --- | --- |
-| [`useMovies.ts`](useMovies.ts) | `useMovies` | Catalog: Supabase → TMDB → mock; ranking |
+| [`useMovies.ts`](useMovies.ts) | `useMovies` | Catalog: Supabase → TVMaze; ranking |
 | [`useRoom.ts`](useRoom.ts) | `useRoom` | Multiplayer join, sync, swipes, matches |
 | [`usePremium.ts`](usePremium.ts) | `usePremium` | Premium flag, daily swipes, Razorpay |
 | [`useSwipeDeck.ts`](useSwipeDeck.ts) | `useSwipeDeck` | Solo index, history, undo |
@@ -34,21 +34,4 @@ On Supabase network failure → `setForceMockFallback(true)` and user-facing err
 
 ## `useMovies` contract
 
-Precedence: `movies_catalog` → TMDB → `getMockContent`. Uses `shuffleSeed` to skip ranking shuffle in rooms.
-
-## Known bugs
-
-| Hook | Issue | Status |
-| --- | --- | --- |
-| `useRoom` | `onMatch` in effect deps | Added to polling effect |
-| `useRoom` | Supabase stuck loader | Fallback flag added |
-| `usePremium` | Skips verify API in mock key mode | By design |
-
-## Verification
-
-- Mock room: host + guests sync within 2 poll intervals
-- Solo: `useMovies` returns items without API keys
-
-## After successful execution
-
-Update hook list in `Architecture.md` section 2.
+Precedence: `movies_catalog` → TVMaze filling stream. Uses `shuffleSeed` to skip ranking shuffle in rooms.

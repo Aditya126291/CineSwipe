@@ -32,23 +32,3 @@ Match logic for clients lives in [`lib/room-match.ts`](../../lib/room-match.ts).
 ## Dependencies
 
 - `lib/mock-store`, `lib/validation`, `razorpay` (payment)
-
-## Known bugs and errors
-
-| Endpoint | Issue | Fix |
-| --- | --- | --- |
-| `POST /api/payment/verify` | Was accepting `{}` in dev | **Fixed:** requires fields + sandbox signature for mock success |
-| `POST /api/rooms` | Was overwriting duplicates | **Fixed:** 409 Conflict |
-| Sync | Unknown actions | **Fixed:** 400 for invalid `action` |
-
-## Verification checklist
-
-```bash
-# Room validation (dev server running)
-curl -s "http://localhost:3000/api/rooms?code=ABC"   # expect 400
-curl -s -X POST http://localhost:3000/api/payment/verify -H "Content-Type: application/json" -d "{}"  # expect 400
-```
-
-## After successful execution
-
-Update `Architecture.md` API route table and QA API test results.

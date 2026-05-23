@@ -14,7 +14,7 @@ Framework-agnostic utilities, validation, mock multiplayer store, recommendation
 | [`recommendations.ts`](recommendations.ts) | Genre weight init/update/rank |
 | [`storage.ts`](storage.ts) | `safeStorage` / `safeSessionStorage` fallbacks |
 | [`supabase/`](supabase/README.md) | DB client, types, schema |
-| [`tmdb/`](tmdb/README.md) | TMDB API + mock catalog |
+| [`tmdb/`](tmdb/README.md) | TMDB API + image proxying |
 
 ## `mock-store` contract
 
@@ -25,13 +25,3 @@ Framework-agnostic utilities, validation, mock multiplayer store, recommendation
 ## Dependencies
 
 Imported by `app/api/*`, `hooks/*`, and some `components/*`.
-
-## Verification
-
-```bash
-npm run build   # resolves @/lib/* paths
-```
-
-## After successful execution
-
-List new modules in `Architecture.md` data layer section.
