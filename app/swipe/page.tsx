@@ -16,6 +16,8 @@ import SwipeDeck from '@/components/SwipeDeck';
 import UpgradePrompt from '@/components/UpgradePrompt';
 import SkeletonCard from '@/components/SkeletonCard';
 import AdBanner from '@/components/AdBanner';
+import { safeStorage } from '@/lib/storage';
+
 export default function SoloSwipePage() {
   const [contentType, setContentType] = useState<'all' | 'movie' | 'tv'>('all');
   const [selectedGenreId, setSelectedGenreId] = useState<number | undefined>(undefined);
@@ -31,13 +33,13 @@ export default function SoloSwipePage() {
     setUpgradeOpen(true);
   };
 
-  // Initialize weights in localStorage on mount and dynamically select the user's highest weighted starting genre (quota)
+  // Initialize weights in safeStorage on mount and dynamically select the user's highest weighted starting genre (quota)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       let weights = initializeWeights();
-      const stored = localStorage.getItem('cineswipe-genre-weights');
+      const stored = safeStorage.getItem('cineswipe-genre-weights');
       if (!stored) {
-        localStorage.setItem('cineswipe-genre-weights', JSON.stringify(weights));
+        safeStorage.setItem('cineswipe-genre-weights', JSON.stringify(weights));
       } else {
         try {
           weights = JSON.parse(stored);
@@ -45,7 +47,7 @@ export default function SoloSwipePage() {
           console.error('Failed to parse weights', e);
         }
       }
-      localStorage.removeItem('cineswipe-genre-weights-history');
+      safeStorage.removeItem('cineswipe-genre-weights-history');
 
       // Find the genre with the highest weight (quota)
       let highestGenreId: number | undefined = undefined;
@@ -60,7 +62,7 @@ export default function SoloSwipePage() {
         }
       }
 
-      // Genre preferences are loaded into weights in localStorage, which will be naturally
+      // Genre preferences are loaded into weights in safeStorage, which will be naturally
       // bubbled to the top by the recommendation ranker (rankMovies) under 'All Feeds'
       // without programmatically locking the UI filter pill and exhausting the pool.
     }
@@ -79,8 +81,8 @@ export default function SoloSwipePage() {
       let currentWeights = initializeWeights();
       let lastLikedGenre: number | null = null;
 
-      const storedWeights = localStorage.getItem('cineswipe-genre-weights');
-      const storedLastLiked = localStorage.getItem('cineswipe-last-liked-genre');
+      const storedWeights = safeStorage.getItem('cineswipe-genre-weights');
+      const storedLastLiked = safeStorage.getItem('cineswipe-last-liked-genre');
 
       if (storedWeights) {
         try {
@@ -97,7 +99,7 @@ export default function SoloSwipePage() {
       }
 
       // Save to history stack
-      const storedHistory = localStorage.getItem('cineswipe-genre-weights-history') || '[]';
+      const storedHistory = safeStorage.getItem('cineswipe-genre-weights-history') || '[]';
       let historyStack = [];
       try {
         historyStack = JSON.parse(storedHistory);
@@ -106,7 +108,7 @@ export default function SoloSwipePage() {
         historyStack = [];
       }
       historyStack.push({ weights: currentWeights, lastLikedGenre });
-      localStorage.setItem('cineswipe-genre-weights-history', JSON.stringify(historyStack));
+      safeStorage.setItem('cineswipe-genre-weights-history', JSON.stringify(historyStack));
 
       const swipedMovie = movies.find((m) => m.id === movieId);
 
@@ -114,16 +116,16 @@ export default function SoloSwipePage() {
         const genres = swipedMovie?.genreIds || [];
         if (genres.length > 0) {
           const newState = updateFeedWeightsMultiple({ weights: currentWeights, lastLikedGenre }, genres);
-          localStorage.setItem('cineswipe-genre-weights', JSON.stringify(newState.weights));
+          safeStorage.setItem('cineswipe-genre-weights', JSON.stringify(newState.weights));
           if (newState.lastLikedGenre !== null) {
-            localStorage.setItem('cineswipe-last-liked-genre', newState.lastLikedGenre.toString());
+            safeStorage.setItem('cineswipe-last-liked-genre', newState.lastLikedGenre.toString());
           }
         }
       } else if (direction === 'dislike') {
         const genres = swipedMovie?.genreIds || [];
         if (genres.length > 0) {
           const newState = penalizeFeedWeightsMultiple({ weights: currentWeights, lastLikedGenre }, genres);
-          localStorage.setItem('cineswipe-genre-weights', JSON.stringify(newState.weights));
+          safeStorage.setItem('cineswipe-genre-weights', JSON.stringify(newState.weights));
         }
       }
 
@@ -213,7 +215,7 @@ export default function SoloSwipePage() {
   }, [currentIndex, movies, loading, contentType, selectedGenreId, setMovies]);
 
   const handleUndo = () => {
-    // Revert seen status of the last swiped movie in localStorage
+    // Revert seen status of the last swiped movie in safeStorage
     if (history.length > 0) {
       const revertedMovieId = history[0].item.id;
       removeSeenMovieId(revertedMovieId);
@@ -221,22 +223,22 @@ export default function SoloSwipePage() {
 
     // Restore previous weights from history if applicable
     if (typeof window !== 'undefined') {
-      const storedHistory = localStorage.getItem('cineswipe-genre-weights-history');
+      const storedHistory = safeStorage.getItem('cineswipe-genre-weights-history');
       if (storedHistory) {
         try {
           const historyStack = JSON.parse(storedHistory);
           if (Array.isArray(historyStack) && historyStack.length > 0) {
             const previousState = historyStack.pop();
             if (previousState && previousState.weights) {
-              localStorage.setItem('cineswipe-genre-weights', JSON.stringify(previousState.weights));
+              safeStorage.setItem('cineswipe-genre-weights', JSON.stringify(previousState.weights));
               if (previousState.lastLikedGenre !== undefined) {
                 if (previousState.lastLikedGenre === null) {
-                  localStorage.removeItem('cineswipe-last-liked-genre');
+                  safeStorage.removeItem('cineswipe-last-liked-genre');
                 } else {
-                  localStorage.setItem('cineswipe-last-liked-genre', previousState.lastLikedGenre.toString());
+                  safeStorage.setItem('cineswipe-last-liked-genre', previousState.lastLikedGenre.toString());
                 }
               }
-              localStorage.setItem('cineswipe-genre-weights-history', JSON.stringify(historyStack));
+              safeStorage.setItem('cineswipe-genre-weights-history', JSON.stringify(historyStack));
             }
           }
         } catch {

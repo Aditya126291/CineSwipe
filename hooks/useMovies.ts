@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { initializeWeights, rankMovies } from '@/lib/recommendations';
 import type { ContentItem, Genre } from '@/lib/types/content';
 
+import { safeStorage } from '@/lib/storage';
+
 export const CATALOG_BATCH_SIZE = 20;
 
 export type CatalogSource = 'supabase' | 'tvmaze' | 'unknown';
@@ -19,7 +21,7 @@ export const ALL_GENRES: Genre[] = [
 // Persistent Seen List helper functions
 export function getSeenMovieIds(): number[] {
   if (typeof window === 'undefined') return [];
-  const stored = localStorage.getItem('cineswipe-seen-ids');
+  const stored = safeStorage.getItem('cineswipe-seen-ids');
   if (!stored) return [];
   try {
     return JSON.parse(stored);
@@ -37,7 +39,7 @@ export function saveSeenMovieId(id: number) {
     if (seen.length > 2000) {
       seen.shift();
     }
-    localStorage.setItem('cineswipe-seen-ids', JSON.stringify(seen));
+    safeStorage.setItem('cineswipe-seen-ids', JSON.stringify(seen));
   }
 }
 
@@ -45,12 +47,12 @@ export function removeSeenMovieId(id: number) {
   if (typeof window === 'undefined') return;
   const seen = getSeenMovieIds();
   const updated = seen.filter((x) => x !== id);
-  localStorage.setItem('cineswipe-seen-ids', JSON.stringify(updated));
+  safeStorage.setItem('cineswipe-seen-ids', JSON.stringify(updated));
 }
 
 export function getStoredWeights() {
   if (typeof window === 'undefined') return initializeWeights();
-  const stored = localStorage.getItem('cineswipe-genre-weights');
+  const stored = safeStorage.getItem('cineswipe-genre-weights');
   if (stored) {
     try {
       return JSON.parse(stored);
@@ -75,6 +77,12 @@ export function useMovies(
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [catalogSource, setCatalogSource] = useState<CatalogSource>('unknown');
   const loadingMoreRef = useRef(false);
+
+  // Track the absolute latest movies list in a mutable ref to fully prevent stale closures in concurrent callbacks
+  const latestMoviesRef = useRef<ContentItem[]>([]);
+  useEffect(() => {
+    latestMoviesRef.current = movies;
+  }, [movies]);
 
   // --- LOBBY/ROOM MODE: Batch-based deterministic fetching ---
   const shownMovieIdsRef = useRef<Set<number>>(new Set());
@@ -224,7 +232,7 @@ export function useMovies(
       const weights = getStoredWeights();
       
       // Grab the last 3 cards as context for diversity check
-      const recent = movies.slice(-3);
+      const recent = latestMoviesRef.current.slice(-3);
 
       const res = await fetch('/api/catalog/next-card', {
         method: 'POST',
@@ -233,7 +241,7 @@ export function useMovies(
           mediaType,
           selectedGenreId: genreId,
           weights,
-          seen: [...globalSeen, ...movies.map(item => item.id)],
+          seen: [...globalSeen, ...latestMoviesRef.current.map(item => item.id)],
           recent: recent.map(item => ({ id: item.id, title: item.title, genreIds: item.genreIds, mediaType: item.mediaType }))
         })
       });
@@ -250,7 +258,7 @@ export function useMovies(
     } catch (err) {
       console.error('Failed to fetch next dynamic card:', err);
     }
-  }, [movies, mediaType, genreId]);
+  }, [mediaType, genreId]);
 
 
   // Initialize and reload feed when parameters change

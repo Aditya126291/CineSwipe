@@ -195,6 +195,74 @@ export async function POST(request: Request) {
     // 4. Filter out seen items
     let unseenCandidates = candidatePool.filter(item => !seenSet.has(item.id));
 
+    // WIDEN SEARCH ON GENRE EXHAUSTION FALLBACK (Pillar 3 & 4)
+    // If the selected genre is fully exhausted (0 unseen candidates), we widen the candidate query pool
+    // to ALL genres in the database before resorting to repeating. This guarantees the user will see
+    // every other movie/show in the entire database exactly once before any item repeats!
+    if (unseenCandidates.length === 0 && chosenGenre) {
+      const widerPool: ContentItem[] = [];
+      
+      // A. Query Supabase without genre constraints
+      if (supabase) {
+        try {
+          let queryWider = supabase.from('movies_catalog').select('*');
+          if (chosenMediaType !== 'all') {
+            queryWider = queryWider.eq('media_type', chosenMediaType);
+          }
+          // Fetch up to 40 items to cover the entire catalog
+          const { data: dbDataWider, error: dbErrWider } = await queryWider.limit(40);
+          if (!dbErrWider && dbDataWider && dbDataWider.length > 0) {
+            const mappedWider = dbDataWider.map((row) => mapCatalogRowToContentItem(row as Record<string, unknown>));
+            widerPool.push(...mappedWider);
+          }
+        } catch (err) {
+          console.error('Supabase wider fetch failed in next-card endpoint:', err);
+        }
+      }
+
+      // B. Query TVMaze without genre constraints
+      if (chosenMediaType === 'tv' || chosenMediaType === 'all') {
+        try {
+          const randomTvmazePage = Math.floor(Math.random() * 6);
+          const res = await fetch(`https://api.tvmaze.com/shows?page=${randomTvmazePage}`);
+          if (res.ok) {
+            const shows = await res.json();
+            if (shows && shows.length > 0) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const filteredShows = shows.filter((show: any) => show.image?.medium && show.name);
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const tvmazeItems: ContentItem[] = filteredShows.map((show: any) => {
+                const overview = show.summary ? show.summary.replace(/<[^>]*>/g, '').trim() : '';
+                const mappedGenreIds = show.genres ? show.genres.map(mapTvmazeGenreToTmdb).filter((id: number) => id > 0) : [];
+                return {
+                  id: 2000000 + Number(show.id),
+                  title: show.name,
+                  overview,
+                  posterUrl: show.image.medium,
+                  backdropUrl: show.image.original || show.image.medium,
+                  releaseYear: show.premiered ? show.premiered.substring(0, 4) : '',
+                  rating: show.rating?.average ? Number(show.rating.average) : 7.0,
+                  voteCount: show.rating?.average ? 150 : 0,
+                  genreIds: mappedGenreIds.length > 0 ? mappedGenreIds : [],
+                  mediaType: 'tv',
+                  providers: [{ name: 'TVMaze', logoUrl: '', link: show.url || 'https://www.tvmaze.com/' }],
+                };
+              });
+              widerPool.push(...tvmazeItems);
+            }
+          }
+        } catch (err) {
+          console.error('TVMaze wider fetch failed in next-card endpoint:', err);
+        }
+      }
+
+      // Filter the wider pool using seenSet
+      const unseenWider = widerPool.filter(item => !seenSet.has(item.id));
+      if (unseenWider.length > 0) {
+        unseenCandidates = unseenWider;
+      }
+    }
+
     // 5. Apply Anti-Sameyness / Diversity penalties
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recentList = recent as any[];

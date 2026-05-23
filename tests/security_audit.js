@@ -105,7 +105,10 @@ async function runSecurityAudit() {
   // PILLAR 2: API RATE-LIMITER (SLIDING-WINDOW IP BUCKET)
   // ==========================================================================
   console.log(`${BOLD}${YELLOW}--- Pillar 2: API Rate-Limiter (Sliding-Window IP Bucket) ---${RESET}`);
+  // Store original NODE_ENV to restore after test
+  const originalEnv = process.env.NODE_ENV;
   try {
+    process.env.NODE_ENV = 'production';
     const testIp = '192.168.1.100';
     const otherIp = '192.168.1.200';
     const rateLimitResponses = [];
@@ -116,7 +119,7 @@ async function runSecurityAudit() {
       const req = new NextRequest('http://localhost:3000/api/catalog/feed', {
         headers: { 'x-real-ip': testIp }
       });
-      const res = rateLimitMiddleware(req);
+      const res = await rateLimitMiddleware(req);
       rateLimitResponses.push(res);
     }
     
@@ -150,11 +153,13 @@ async function runSecurityAudit() {
     const otherIpReq = new NextRequest('http://localhost:3000/api/catalog/feed', {
       headers: { 'x-real-ip': otherIp }
     });
-    const otherIpRes = rateLimitMiddleware(otherIpReq);
+    const otherIpRes = await rateLimitMiddleware(otherIpReq);
     assert(otherIpRes === undefined || otherIpRes.status !== 429, `IP-isolation active: request from unblocked IP ${otherIp} succeeds while ${testIp} is throttled`);
 
   } catch (error) {
     console.error(`${RED}Failure in Pillar 2 (Rate Limiter):${RESET}`, error);
+  } finally {
+    process.env.NODE_ENV = originalEnv;
   }
   console.log("");
 
