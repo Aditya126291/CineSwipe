@@ -260,9 +260,38 @@ export async function POST(request: Request) {
       selectedItem = scoredCandidates[0].item;
     } else {
       // Emergency fallback: If everything matching the chosen genre/media type has been swiped,
-      // return a popular item from the database or TVMaze ignoring seen filters, or the first unseen item in the catalog.
+      // we implement a Least-Recently-Seen (LRS) cooldown replacement pattern.
+      // This ranks candidates by their index in the 'seen' array (meaning the movie seen longest ago is preferred).
+      // It also heavily penalizes any candidate currently in the 'recent' list or at the very end of 'seen' to prevent consecutive duplicates.
       if (candidatePool.length > 0) {
-        selectedItem = candidatePool[Math.floor(Math.random() * candidatePool.length)];
+        const fallbackCandidates = candidatePool.map(candidate => {
+          // Find index in seen list
+          const seenIndex = seen.indexOf(candidate.id);
+          
+          // If not in seen, it has high priority (index = -1)
+          // Otherwise, lower index in 'seen' is better because it was seen longer ago
+          let score = seenIndex === -1 ? -100 : seenIndex;
+          
+          // Heavily penalize if it is in the recent deck (last 5 items) to prevent repeats
+          const isRecent = recent.some((r: { id: number }) => Number(r.id) === candidate.id);
+          if (isRecent) {
+            score += 10000; // Push score very high (meaning it's disqualified/penalized)
+          }
+
+          // Penalize if it's the absolute last item swiped in seen
+          if (seen.length > 0 && seen[seen.length - 1] === candidate.id) {
+            score += 5000;
+          }
+
+          return {
+            item: candidate,
+            score
+          };
+        });
+
+        // Sort ascending by score (so lowest score/longest-ago-seen is selected first)
+        fallbackCandidates.sort((a, b) => a.score - b.score);
+        selectedItem = fallbackCandidates[0].item;
       } else if (supabase) {
         // Ultimate database fallback
         const { data } = await supabase.from('movies_catalog').select('*').limit(5);

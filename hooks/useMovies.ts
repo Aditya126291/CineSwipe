@@ -233,7 +233,7 @@ export function useMovies(
           mediaType,
           selectedGenreId: genreId,
           weights,
-          seen: globalSeen,
+          seen: [...globalSeen, ...movies.map(item => item.id)],
           recent: recent.map(item => ({ id: item.id, title: item.title, genreIds: item.genreIds, mediaType: item.mediaType }))
         })
       });
