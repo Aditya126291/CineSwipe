@@ -14,7 +14,7 @@
     "catalog:hydrate": "node scripts/catalog-hydrate.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.106.0",
+    "@supabase/supabase-js": "^2.106.1",
     "canvas-confetti": "^1.9.4",
     "framer-motion": "^12.39.0",
     "lucide-react": "^1.16.0",
